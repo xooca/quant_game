@@ -755,6 +755,11 @@ class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
                 df[col] = self.rolling_window(x, self.last_ticks + 1)
         return df
 
+def convert_todate_deduplicate(df):
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index()
+        df = df[~df.index.duplicated(keep='first')] 
+        return df
 class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
     def __init__(self, columns,create_new_col = True,last_ticks=10):
         self.columns = columns
@@ -782,7 +787,7 @@ class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
         return df
 
 class LastTickBreachCount(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,create_new_col = True,last_ticks='10min',breach_type = 'mean'):
+    def __init__(self, columns,create_new_col = True,last_ticks='10min',breach_type = ['mean']):
         self.columns = columns
         self.last_ticks = last_ticks
         self.create_new_col = create_new_col
@@ -796,101 +801,80 @@ class LastTickBreachCount(BaseEstimator, TransformerMixin):
         df = df.sort_index()
         df = df[~df.index.duplicated(keep='first')]         
         for col in self.columns:
-            if self.create_new_col:
-                col_name = f'last_tick_{self.breach_type}_{col}_{self.last_ticks}'
-            else:
-                col_name = col
-            if self.breach_type == 'mean':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).mean())
-                        .astype(int))
-            elif self.breach_type == 'min':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).min())
-                        .astype(int))
-            elif self.breach_type == 'max':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).max())
-                        .astype(int))
-            elif self.breach_type == 'median':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).median())
-                        .astype(int))
-            elif self.breach_type == '10thquantile':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).quantile(0.1))
-                        .astype(int))
-            elif self.breach_type == '25thquantile':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).quantile(0.25))
-                        .astype(int))
-            elif self.breach_type == '75thquantile':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).quantile(0.75))
-                        .astype(int))
-            elif self.breach_type == '95thquantile':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).quantile(0.95))
-                        .astype(int))
-            else:
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).mean())
-                        .astype(int))
+            for breach_type in self.breach_type:
+                if self.create_new_col:
+                    col_name = f'last_tick_{self.breach_type}_{col}_{self.last_ticks}'
+                else:
+                    col_name = col
+                if breach_type == 'mean':
+                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).mean())
+                            .astype(int))
+                elif breach_type == 'min':
+                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).min())
+                            .astype(int))
+                elif breach_type == 'max':
+                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).max())
+                            .astype(int))
+                elif breach_type == 'median':
+                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).median())
+                            .astype(int))
+                elif breach_type == '10thquantile':
+                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).quantile(0.1))
+                            .astype(int))
+                elif breach_type == '25thquantile':
+                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).quantile(0.25))
+                            .astype(int))
+                elif breach_type == '75thquantile':
+                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).quantile(0.75))
+                            .astype(int))
+                elif breach_type == '95thquantile':
+                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).quantile(0.95))
+                            .astype(int))
+                else:
+                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).mean())
+                            .astype(int))
         return df
 
-class IncreasingCountLastTicks(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,create_new_col = True,last_ticks='10min',breach_type = 'mean'):
-        self.columns = columns
-        self.last_ticks = last_ticks
-        self.create_new_col = create_new_col
-        self.breach_type = breach_type
+class DayRangeHourWise(BaseEstimator, TransformerMixin):
+    def __init__(self, first_col = 'high',second_col='low',hour_range = [('09:00', '10:30'),('10:30', '11:30')],range_type=['price_range','price_deviation_max_first_col']):
+        self.hour_range = hour_range
+        self.first_col = first_col
+        self.second_col = second_col
+        self.range_type = range_type
         
     def fit(self, X, y=None):
-        return self    # Nothing to do in fit in this scenario
+        return self    
 
     def transform(self, df):
-        df.index = pd.to_datetime(df.index)
-        df = df.sort_index()
-        df = df[~df.index.duplicated(keep='first')]         
-        for col in self.columns:
-            if self.create_new_col:
-                col_name = f'last_tick_{self.breach_type}_{col}_{self.last_ticks}'
-            else:
-                col_name = col
-            if self.breach_type == 'mean':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).mean())
-                        .astype(int))
-            elif self.breach_type == 'min':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).min())
-                        .astype(int))
-            elif self.breach_type == 'max':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).max())
-                        .astype(int))
-            elif self.breach_type == 'median':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).median())
-                        .astype(int))
-            elif self.breach_type == '10thquantile':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).quantile(0.1))
-                        .astype(int))
-            elif self.breach_type == '25thquantile':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).quantile(0.25))
-                        .astype(int))
-            elif self.breach_type == '75thquantile':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).quantile(0.75))
-                        .astype(int))
-            elif self.breach_type == '95thquantile':
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).quantile(0.95))
-                        .astype(int))
-            else:
-                df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                        .apply(lambda x: (x[-1] > x[:-1]).mean())
-                        .astype(int))
-        return df
+        df = convert_todate_deduplicate(df)
+        for r1,r2 in self.hour_range:
+            for rt in self.range_type:
+                if rt == 'price_range':
+                    s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max() - df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).min()
+                elif rt == 'price_deviation_max_first_col':
+                    s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).mean() - df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max()
+                elif rt == 'price_deviation_min_first_col':
+                    s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).mean() - df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).min()
+                elif rt == 'price_deviation_max_second_col':
+                    s1 = df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).mean() - df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max()
+                elif rt == 'price_deviation_min_second_col':
+                    s1 = df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).mean() - df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).min()
+                else:
+                    s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max() - df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).min()
+            s1.index = pd.to_datetime(s1.index) 
+            s1 = s1.sort_index()
+            c = [int(i) for i in r2.split(':')]
+            s1.index = s1.index + pd.DateOffset(minutes=c[0]*60 + c[1])
+            s1 = pd.DataFrame(s1,columns=[f"range_{r2.replace(':','')}"])
+            df=pd.merge(df,s1, how='outer', left_index=True, right_index=True)
+            df[f"range_{r2.replace(':','')}"] = df[f"range_{r2.replace(':','')}"].fillna(method='ffill')
+

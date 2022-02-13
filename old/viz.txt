@@ -1,0 +1,204 @@
+self.stats_url = 'https://in.finance.yahoo.com/quote/'+ticker+'/key-statistics?p='+ticker
+self.hist_url = f'https://in.finance.yahoo.com/quote/{ticker}/history?period1={start_date}&period2={end_date}\
+        &interval={frequency}&filter=history&frequency={frequency}'
+self.finance_url = f'https://in.finance.yahoo.com/quote/{ticker}/financials?p={ticker}'
+self.balance_sheet_url = f'https://in.finance.yahoo.com/quote/{ticker}/balance-sheet?p={ticker}'
+self.cash_flow_url = f'https://in.finance.yahoo.com/quote/{ticker}/cash-flow?p={ticker}'
+self.analysis_url = f'https://in.finance.yahoo.com/quote/{ticker}/analysis?p={ticker}'
+self.holder_url = f'https://in.finance.yahoo.com/quote/{ticker}/holders?p={ticker}'
+self.insider_roster_url = f'https://in.finance.yahoo.com/quote/{ticker}/insider-roster?p={ticker}'
+self.insider_trans_url = f'https://in.finance.yahoo.com/quote/{ticker}/insider-transactions?p={ticker}'
+self.summary_url = f'https://in.finance.yahoo.com/quote/{ticker}?p={ticker}'
+
+['Breakdown', 'ttm', '31/3/2019', '31/3/2018', '31/3/2017', 'Cash flows from operating activities', 'Net income', '-1,04,14,042', '1,70,92,658', '4,23,32,200', '3,33,98,856', 'Depreciation & amortisation', '-', '30,54,514', '23,23,569', '17,26,068', 'Change in working capital', '7,32,34,127', '-30,60,20,373', '-27,66,92,805', '17,42,811', 'Other working capital', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201', 'Other non-cash items', '-', '21,02,585', '16,73,308', '7,89,586', 'Net cash provided by operating activities', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385', 'Cash flows from investing activities ', 'Investments in property, plant and equipment', '-', '-30,31,859', '-39,32,525', '-38,92,184', 'Other investing activities', '-', '-', '-', '1', 'Net cash used for investing activities', '8,47,44,313', '-6,29,36,887', '-8,74,48,959', '-4,47,38,722', 'Net change in cash', '-', '2,23,11,137', '5,19,91,595', '11,33,57,539', 'Cash at beginning of period', '16,44,52,100', '24,75,38,171', '19,55,46,577', '8,21,89,038', 'Cash at end of period', '30,70,63,627', '26,98,49,307', '24,75,38,171', '19,55,46,577', 'Free cash flow', 'Operating cash flow', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385', 'Capital expenditure', '-', '-30,31,859', '-39,32,525', '-38,92,184', 'Free cash flow', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201'] 83
+['Breakdown', 'ttm', '31/3/2019', '31/3/2018', '31/3/2017'] 5
+['Breakdown', 'ttm', '31/3/2019', '31/3/2018', '31/3/2017'] 5
+['Breakdown'] 1
+[''] 1
+['ttm'] 1
+['31/3/2019'] 1
+['31/3/2018'] 1
+['31/3/2017'] 1
+['Cash flows from operating activities', 'Net income', '-1,04,14,042', '1,70,92,658', '4,23,32,200', '3,33,98,856', 'Depreciation & amortisation', '-', '30,54,514', '23,23,569', '17,26,068', 'Change in working capital', '7,32,34,127', '-30,60,20,373', '-27,66,92,805', '17,42,811', 'Other working capital', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201', 'Other non-cash items', '-', '21,02,585', '16,73,308', '7,89,586', 'Net cash provided by operating activities', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385', 'Cash flows from investing activities ', 'Investments in property, plant and equipment', '-', '-30,31,859', '-39,32,525', '-38,92,184', 'Other investing activities', '-', '-', '-', '1', 'Net cash used for investing activities', '8,47,44,313', '-6,29,36,887', '-8,74,48,959', '-4,47,38,722', 'Net change in cash', '-', '2,23,11,137', '5,19,91,595', '11,33,57,539', 'Cash at beginning of period', '16,44,52,100', '24,75,38,171', '19,55,46,577', '8,21,89,038', 'Cash at end of period', '30,70,63,627', '26,98,49,307', '24,75,38,171', '19,55,46,577', 'Free cash flow', 'Operating cash flow', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385', 'Capital expenditure', '-', '-30,31,859', '-39,32,525', '-38,92,184', 'Free cash flow', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201'] 78
+['Cash flows from operating activities', 'Net income', '-1,04,14,042', '1,70,92,658', '4,23,32,200', '3,33,98,856', 'Depreciation & amortisation', '-', '30,54,514', '23,23,569', '17,26,068', 'Change in working capital', '7,32,34,127', '-30,60,20,373', '-27,66,92,805', '17,42,811', 'Other working capital', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201', 'Other non-cash items', '-', '21,02,585', '16,73,308', '7,89,586', 'Net cash provided by operating activities', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385'] 31
+['Cash flows from operating activities'] 1
+['Cash flows from operating activities'] 1
+['Cash flows from operating activities'] 1
+[''] 1
+[''] 1
+[''] 1
+[''] 1
+[''] 1
+['Net income', '-1,04,14,042', '1,70,92,658', '4,23,32,200', '3,33,98,856', 'Depreciation & amortisation', '-', '30,54,514', '23,23,569', '17,26,068', 'Change in working capital', '7,32,34,127', '-30,60,20,373', '-27,66,92,805', '17,42,811', 'Other working capital', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201', 'Other non-cash items', '-', '21,02,585', '16,73,308', '7,89,586', 'Net cash provided by operating activities', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385'] 30
+['Net income', '-1,04,14,042', '1,70,92,658', '4,23,32,200', '3,33,98,856'] 5
+['Net income', '-1,04,14,042', '1,70,92,658', '4,23,32,200', '3,33,98,856'] 5
+['Net income'] 1
+['Net income'] 1
+[''] 1
+['-1,04,14,042'] 1
+['1,70,92,658'] 1
+['4,23,32,200'] 1
+['3,33,98,856'] 1
+[''] 1
+['Depreciation & amortisation', '-', '30,54,514', '23,23,569', '17,26,068'] 5
+['Depreciation & amortisation', '-', '30,54,514', '23,23,569', '17,26,068'] 5
+['Depreciation & amortisation'] 1
+['Depreciation & amortisation'] 1
+[''] 1
+['-'] 1
+['30,54,514'] 1
+['23,23,569'] 1
+['17,26,068'] 1
+[''] 1
+['Change in working capital', '7,32,34,127', '-30,60,20,373', '-27,66,92,805', '17,42,811'] 5
+['Change in working capital', '7,32,34,127', '-30,60,20,373', '-27,66,92,805', '17,42,811'] 5
+['Change in working capital'] 1
+['Change in working capital'] 1
+[''] 1
+['7,32,34,127'] 1
+['-30,60,20,373'] 1
+['-27,66,92,805'] 1
+['17,42,811'] 1
+[''] 1
+['Other working capital', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201'] 5
+['Other working capital', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201'] 5
+['Other working capital'] 1
+['Other working capital'] 1
+[''] 1
+['-'] 1
+['-24,87,64,870'] 1
+['-22,20,36,969'] 1
+['3,99,49,201'] 1
+[''] 1
+['Other non-cash items', '-', '21,02,585', '16,73,308', '7,89,586'] 5
+['Other non-cash items', '-', '21,02,585', '16,73,308', '7,89,586'] 5
+['Other non-cash items'] 1
+['Other non-cash items'] 1
+[''] 1
+['-'] 1
+['21,02,585'] 1
+['16,73,308'] 1
+['7,89,586'] 1
+[''] 1
+['Net cash provided by operating activities', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385'] 5
+['Net cash provided by operating activities', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385'] 5
+['Net cash provided by operating activities'] 1
+['Net cash provided by operating activities'] 1
+[''] 1
+['-'] 1
+['-24,57,33,011'] 1
+['-21,81,04,444'] 1
+['4,38,41,385'] 1
+[''] 1
+['Cash flows from investing activities ', 'Investments in property, plant and equipment', '-', '-30,31,859', '-39,32,525', '-38,92,184', 'Other investing activities', '-', '-', '-', '1', 'Net cash used for investing activities', '8,47,44,313', '-6,29,36,887', '-8,74,48,959', '-4,47,38,722'] 16
+['Cash flows from investing activities '] 1
+['Cash flows from investing activities '] 1
+['Cash flows from investing activities '] 1
+[''] 1
+[''] 1
+[''] 1
+[''] 1
+[''] 1
+['Investments in property, plant and equipment', '-', '-30,31,859', '-39,32,525', '-38,92,184', 'Other investing activities', '-', '-', '-', '1', 'Net cash used for investing activities', '8,47,44,313', '-6,29,36,887', '-8,74,48,959', '-4,47,38,722'] 15
+['Investments in property, plant and equipment', '-', '-30,31,859', '-39,32,525', '-38,92,184'] 5
+['Investments in property, plant and equipment', '-', '-30,31,859', '-39,32,525', '-38,92,184'] 5
+['Investments in property, plant and equipment'] 1
+['Investments in property, plant and equipment'] 1
+[''] 1
+['-'] 1
+['-30,31,859'] 1
+['-39,32,525'] 1
+['-38,92,184'] 1
+[''] 1
+['Other investing activities', '-', '-', '-', '1'] 5
+['Other investing activities', '-', '-', '-', '1'] 5
+['Other investing activities'] 1
+['Other investing activities'] 1
+[''] 1
+['-'] 1
+['-'] 1
+['-'] 1
+['1'] 1
+[''] 1
+['Net cash used for investing activities', '8,47,44,313', '-6,29,36,887', '-8,74,48,959', '-4,47,38,722'] 5
+['Net cash used for investing activities', '8,47,44,313', '-6,29,36,887', '-8,74,48,959', '-4,47,38,722'] 5
+['Net cash used for investing activities'] 1
+['Net cash used for investing activities'] 1
+[''] 1
+['8,47,44,313'] 1
+['-6,29,36,887'] 1
+['-8,74,48,959'] 1
+['-4,47,38,722'] 1
+[''] 1
+['Net change in cash', '-', '2,23,11,137', '5,19,91,595', '11,33,57,539'] 5
+['Net change in cash', '-', '2,23,11,137', '5,19,91,595', '11,33,57,539'] 5
+['Net change in cash'] 1
+['Net change in cash'] 1
+[''] 1
+['-'] 1
+['2,23,11,137'] 1
+['5,19,91,595'] 1
+['11,33,57,539'] 1
+[''] 1
+['Cash at beginning of period', '16,44,52,100', '24,75,38,171', '19,55,46,577', '8,21,89,038'] 5
+['Cash at beginning of period', '16,44,52,100', '24,75,38,171', '19,55,46,577', '8,21,89,038'] 5
+['Cash at beginning of period'] 1
+['Cash at beginning of period'] 1
+[''] 1
+['16,44,52,100'] 1
+['24,75,38,171'] 1
+['19,55,46,577'] 1
+['8,21,89,038'] 1
+[''] 1
+['Cash at end of period', '30,70,63,627', '26,98,49,307', '24,75,38,171', '19,55,46,577'] 5
+['Cash at end of period', '30,70,63,627', '26,98,49,307', '24,75,38,171', '19,55,46,577'] 5
+['Cash at end of period'] 1
+['Cash at end of period'] 1
+[''] 1
+['30,70,63,627'] 1
+['26,98,49,307'] 1
+['24,75,38,171'] 1
+['19,55,46,577'] 1
+[''] 1
+['Free cash flow', 'Operating cash flow', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385', 'Capital expenditure', '-', '-30,31,859', '-39,32,525', '-38,92,184', 'Free cash flow', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201'] 16
+['Free cash flow'] 1
+['Free cash flow'] 1
+['Free cash flow'] 1
+[''] 1
+[''] 1
+[''] 1
+[''] 1
+[''] 1
+['Operating cash flow', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385', 'Capital expenditure', '-', '-30,31,859', '-39,32,525', '-38,92,184', 'Free cash flow', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201'] 15
+['Operating cash flow', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385'] 5
+['Operating cash flow', '-', '-24,57,33,011', '-21,81,04,444', '4,38,41,385'] 5
+['Operating cash flow'] 1
+['Operating cash flow'] 1
+[''] 1
+['-'] 1
+['-24,57,33,011'] 1
+['-21,81,04,444'] 1
+['4,38,41,385'] 1
+[''] 1
+['Capital expenditure', '-', '-30,31,859', '-39,32,525', '-38,92,184'] 5
+['Capital expenditure', '-', '-30,31,859', '-39,32,525', '-38,92,184'] 5
+['Capital expenditure'] 1
+['Capital expenditure'] 1
+[''] 1
+['-'] 1
+['-30,31,859'] 1
+['-39,32,525'] 1
+['-38,92,184'] 1
+[''] 1
+['Free cash flow', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201'] 5
+['Free cash flow', '-', '-24,87,64,870', '-22,20,36,969', '3,99,49,201'] 5
+['Free cash flow'] 1
+['Free cash flow'] 1
+[''] 1
+['-'] 1
+['-24,87,64,870'] 1
+['-22,20,36,969'] 1
+['3,99,49,201'] 1
+[''] 1
+
+https://in.finance.yahoo.com/quote/TCS.NS/history?period1=1514745000&period2=1590949800&interval=1d&filter=history&frequency=1dhistory?period1=1523385000&period2=1590949800&interval=1d&filter=history&frequency=1dhistory?period1=1532025000&period2=1590949800&interval=1d&filter=history&frequency=1dhistory?period1=1540665000&period2=1590949800&interval=1d&filter=history&frequency=1dhistory?period1=1549305000&period2=1590949800&interval=1d&filter=history&frequency=1d
