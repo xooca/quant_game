@@ -639,24 +639,7 @@ class Signals:
         self.df['overlap_weighted_moving_average'] = WMA(
             self.close, timeperiod)
 
-class PriceAction(BaseEstimator, TransformerMixin):
-    def __init__(self, freq='1min',shift=15,shift_column='close'):
-        self.freq = freq
-        self.shift = shift
-        self.shift_column = shift_column
-        self.col_name = f'{shift_column}_{freq}_{shift}'
-        
-    def fit(self, X, y=None):
-        return self    # Nothing to do in fit in this scenario
-    
-    def transform(self, df):
-        df.index = pd.to_datetime(df.index)
-        df = df.sort_index()
-        df = df[~df.index.duplicated(keep='first')]         
-        df[self.col_name] = df[self.shift_column].subtract(df.shift(self.shift, freq=self.freq)[self.shift_column])
-        df[self.col_name] = df[self.col_name].div(df[self.shift_column])*100
-        df[self.col_name] = df[self.col_name].round(3)    
-        return df
+
 
 class LabelCreator(BaseEstimator, TransformerMixin):
     def __init__(self, freq='1min',shift=-15,shift_column='close'):
@@ -786,7 +769,7 @@ class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
                 df[col] = self.rolling_window(x, self.last_ticks + 1)
         return df
 
-class LastTickBreachCount(BaseEstimator, TransformerMixin):
+class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
     def __init__(self, columns,create_new_col = True,last_ticks='10min',breach_type = ['mean']):
         self.columns = columns
         self.last_ticks = last_ticks
@@ -844,7 +827,7 @@ class LastTickBreachCount(BaseEstimator, TransformerMixin):
                             .astype(int))
         return df
 
-class DayRangeHourWise(BaseEstimator, TransformerMixin):
+class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
     def __init__(self, first_col = 'high',second_col='low',hour_range = [('09:00', '10:30'),('10:30', '11:30')],range_type=['price_range','price_deviation_max_first_col']):
         self.hour_range = hour_range
         self.first_col = first_col
@@ -877,4 +860,42 @@ class DayRangeHourWise(BaseEstimator, TransformerMixin):
             s1 = pd.DataFrame(s1,columns=[f"range_{r2.replace(':','')}"])
             df=pd.merge(df,s1, how='outer', left_index=True, right_index=True)
             df[f"range_{r2.replace(':','')}"] = df[f"range_{r2.replace(':','')}"].fillna(method='ffill')
+        return df
 
+class PriceVelocity(BaseEstimator, TransformerMixin):
+    def __init__(self, freq='1min',shift=15,shift_column='close'):
+        self.freq = freq
+        self.shift = shift
+        self.shift_column = shift_column
+        self.col_name = f'price_velocity_{shift_column}_{freq}_{shift}'
+        
+    def fit(self, X, y=None):
+        return self    # Nothing to do in fit in this scenario
+    
+    def transform(self, df):
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index()
+        df = df[~df.index.duplicated(keep='first')]         
+        df[self.col_name] = df[self.shift_column].subtract(df.shift(self.shift, freq=self.freq)[self.shift_column])
+        df[self.col_name] = df[self.col_name]/self.shift
+        df[self.col_name] = df[self.col_name].round(3)    
+        return df
+
+class PricePerIncrement(BaseEstimator, TransformerMixin):
+    def __init__(self, freq='1min',shift=15,shift_column='close'):
+        self.freq = freq
+        self.shift = shift
+        self.shift_column = shift_column
+        self.col_name = f'price_perincrement_{shift_column}_{freq}_{shift}'
+        
+    def fit(self, X, y=None):
+        return self    # Nothing to do in fit in this scenario
+    
+    def transform(self, df):
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index()
+        df = df[~df.index.duplicated(keep='first')]         
+        df[self.col_name] = df[self.shift_column].subtract(df.shift(self.shift, freq=self.freq)[self.shift_column])
+        df[self.col_name] = df[self.col_name].div(df[self.shift_column])*100
+        df[self.col_name] = df[self.col_name].round(3)    
+        return df
