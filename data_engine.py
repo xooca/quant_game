@@ -720,7 +720,7 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
         self.impute_type = impute_type
         self.arbitrary_impute_variable = arbitrary_impute_variable
         self.drop_na = drop_na
-        
+
     def fit(self, X, y=None):
         return self    # Nothing to do in fit in this scenario
 
@@ -747,8 +747,8 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
             df= imputer.transform(df)
         if self.drop_na:
             imputer = DropMissingData(missing_only=True)
-             imputer.fit(df)
-             df= imputer.transform(df)
+            imputer.fit(df)
+            df= imputer.transform(df)
         return df
 class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
     def __init__(self, columns,create_new_col = True,last_ticks=10):
