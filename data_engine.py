@@ -713,13 +713,14 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
         return sig.df
 
 class NormalizeDataset(BaseEstimator, TransformerMixin):
-    def __init__(self, columns = [],impute_values=True,impute_type = 'categorical',convert_to_floats = True,arbitrary_impute_variable=99):
+    def __init__(self, columns = [],impute_values=True,impute_type = 'categorical',convert_to_floats = True,arbitrary_impute_variable=99,drop_na=True):
         self.impute_values = impute_values
         self.convert_to_floats = convert_to_floats
         self.columns = columns
         self.impute_type = impute_type
         self.arbitrary_impute_variable = arbitrary_impute_variable
-
+        self.drop_na = drop_na
+        
     def fit(self, X, y=None):
         return self    # Nothing to do in fit in this scenario
 
@@ -729,13 +730,13 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
             for col in self.columns:
                 df[col] = df[col].astype('float')
         if self.impute_values:
-            from feature_engine.imputation import MeanMedianImputer,CategoricalImputer,ArbitraryNumberImputer,EndTailImputer
+            from feature_engine.imputation import MeanMedianImputer,CategoricalImputer,ArbitraryNumberImputer,EndTailImputer,DropMissingData
             from sklearn.pipeline import Pipeline
             if self.impute_type == 'mean_median_imputer':
                 imputer = MeanMedianImputer(imputation_method='median', variables=self.columns)
             elif self.impute_type == 'categorical':
                 imputer = CategoricalImputer(variables=self.columns)
-            elif self.impute_type == 'categorical':
+            elif self.impute_type == 'arbitrary':
                 if isinstance(self.arbitrary_impute_variable, dict):
                     imputer = ArbitraryNumberImputer(imputer_dict = self.arbitrary_impute_variable)
                 else:
@@ -744,6 +745,10 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
                 imputer = CategoricalImputer(variables=self.columns)
             imputer.fit(df)
             df= imputer.transform(df)
+        if self.drop_na:
+            imputer = DropMissingData(missing_only=True)
+             imputer.fit(df)
+             df= imputer.transform(df)
         return df
 class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
     def __init__(self, columns,create_new_col = True,last_ticks=10):
