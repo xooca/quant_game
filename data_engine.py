@@ -712,6 +712,39 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
                 self.methods_notrun.append(f)
         return sig.df
 
+class NormalizeDataset(BaseEstimator, TransformerMixin):
+    def __init__(self, columns = [],impute_values=True,impute_type = 'categorical',convert_to_floats = True,arbitrary_impute_variable=99):
+        self.impute_values = impute_values
+        self.convert_to_floats = convert_to_floats
+        self.columns = columns
+        self.impute_type = impute_type
+        self.arbitrary_impute_variable = arbitrary_impute_variable
+
+    def fit(self, X, y=None):
+        return self    # Nothing to do in fit in this scenario
+
+    def transform(self, df):
+        df = convert_todate_deduplicate(df)
+        if self.convert_to_floats:
+            for col in self.columns:
+                df[col] = df[col].astype('float')
+        if self.impute_values:
+            from feature_engine.imputation import MeanMedianImputer,CategoricalImputer,ArbitraryNumberImputer,EndTailImputer
+            from sklearn.pipeline import Pipeline
+            if self.impute_type == 'mean_median_imputer':
+                imputer = MeanMedianImputer(imputation_method='median', variables=self.columns)
+            elif self.impute_type == 'categorical':
+                imputer = CategoricalImputer(variables=self.columns)
+            elif self.impute_type == 'categorical':
+                if isinstance(self.arbitrary_impute_variable, dict):
+                    imputer = ArbitraryNumberImputer(imputer_dict = self.arbitrary_impute_variable)
+                else:
+                    imputer = ArbitraryNumberImputer(variables = self.columns,arbitrary_number = self.arbitrary_number)
+            else:
+                imputer = CategoricalImputer(variables=self.columns)
+            imputer.fit(df)
+            df= imputer.transform(df)
+        return df
 class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
     def __init__(self, columns,create_new_col = True,last_ticks=10):
         self.columns = columns
@@ -732,41 +765,18 @@ class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
         df = df[~df.index.duplicated(keep='first')]         
         for col in self.columns:
             x = np.concatenate([[np.nan] * (self.last_ticks), df[col].values])
+            arr = self.rolling_window(x, self.last_ticks + 1)
             if self.create_new_col:
-                df[f'last_tick_{col}_{self.last_ticks}'] = self.rolling_window(x, self.last_ticks + 1)
+                #df[f'last_tick_{col}_{self.last_ticks}'] = self.rolling_window(x, self.#last_ticks + 1)
+                df[f'last_tick_{col}_{self.last_ticks}']  = (arr[:, :-1] > arr[:, [-1]]).sum(axis=1)
             else:
-                df[col] = self.rolling_window(x, self.last_ticks + 1)
+                df[col] = (arr[:, :-1] > arr[:, [-1]]).sum(axis=1)
         return df
 
 def convert_todate_deduplicate(df):
         df.index = pd.to_datetime(df.index)
         df = df.sort_index()
         df = df[~df.index.duplicated(keep='first')] 
-        return df
-class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,create_new_col = True,last_ticks=10):
-        self.columns = columns
-        self.last_ticks = last_ticks
-        self.create_new_col = create_new_col
-        
-    def fit(self, X, y=None):
-        return self    # Nothing to do in fit in this scenario
-    
-    def rolling_window(self,a, window):
-        shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-        strides = a.strides + (a.strides[-1],)
-        return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
-
-    def transform(self, df):
-        df.index = pd.to_datetime(df.index)
-        df = df.sort_index()
-        df = df[~df.index.duplicated(keep='first')]         
-        for col in self.columns:
-            x = np.concatenate([[np.nan] * (self.last_ticks), df[col].values])
-            if self.create_new_col:
-                df[f'last_tick_maxcnt_{col}_{self.last_ticks}'] = self.rolling_window(x, self.last_ticks + 1)
-            else:
-                df[col] = self.rolling_window(x, self.last_ticks + 1)
         return df
 
 class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
@@ -789,6 +799,7 @@ class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
                     col_name = f'last_tick_{self.breach_type}_{col}_{self.last_ticks}'
                 else:
                     col_name = col
+                print(df[col].dtypes)
                 if breach_type == 'mean':
                     df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
                             .apply(lambda x: (x[-1] > x[:-1]).mean())
@@ -899,3 +910,4 @@ class PricePerIncrement(BaseEstimator, TransformerMixin):
         df[self.col_name] = df[self.col_name].div(df[self.shift_column])*100
         df[self.col_name] = df[self.col_name].round(3)    
         return df
+
