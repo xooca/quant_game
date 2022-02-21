@@ -8,7 +8,7 @@ import pandas as pd
 import pickle
 from pathlib import Path
 from feature_engine.discretisation import EqualWidthDiscretiser
-
+from feature_engine.imputation import MeanMedianImputer,CategoricalImputer,ArbitraryNumberImputer,EndTailImputer,DropMissingData
 
 def unzip_folders(rootPath,pattern):
     for root, dirs, files in os.walk(rootPath):
@@ -639,8 +639,6 @@ class Signals:
         self.df['overlap_weighted_moving_average'] = WMA(
             self.close, timeperiod)
 
-
-
 class LabelCreator(BaseEstimator, TransformerMixin):
     def __init__(self, freq='1min',shift=-15,shift_column='close'):
         self.freq = freq
@@ -685,7 +683,8 @@ class LabelCreator(BaseEstimator, TransformerMixin):
         df.index = pd.to_datetime(df.index)
         df = df.sort_index()
         df = df[~df.index.duplicated(keep='first')]
-        df[self.label_name] = df.shift(self.shift, freq=self.freq)[self.shift_column].subtract(df[self.shift_column]).apply(self.label_generator)   
+        df[self.label_name] = df.shift(self.shift, freq=self.freq)[self.shift_column].subtract(df[self.shift_column]).apply(self.label_generator)  
+        print(f"Shape of dataframe after transform is {df.shape}") 
         return df
 
 class TechnicalIndicator(BaseEstimator, TransformerMixin):
@@ -710,16 +709,21 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
             except Exception as e1:
                 print(f"Function {f} was unable to run, Error is {e1}")
                 self.methods_notrun.append(f)
+        print(f"Shape of dataframe after transform is {df.shape}")
         return sig.df
 
 class NormalizeDataset(BaseEstimator, TransformerMixin):
-    def __init__(self, columns = [],impute_values=True,impute_type = 'categorical',convert_to_floats = True,arbitrary_impute_variable=99,drop_na=True):
+    def __init__(self, columns = [],impute_values=False,impute_type = 'categorical',convert_to_floats = False,arbitrary_impute_variable=99,drop_na_col=False,drop_na_rows=False,
+    fillna = False,fillna_method = 'bfill'):
         self.impute_values = impute_values
         self.convert_to_floats = convert_to_floats
         self.columns = columns
         self.impute_type = impute_type
         self.arbitrary_impute_variable = arbitrary_impute_variable
-        self.drop_na = drop_na
+        self.drop_na_col = drop_na_col
+        self.drop_na_rows = drop_na_rows
+        self.fillna_method = fillna_method
+        self.fillna = fillna
 
     def fit(self, X, y=None):
         return self    # Nothing to do in fit in this scenario
@@ -730,7 +734,7 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
             for col in self.columns:
                 df[col] = df[col].astype('float')
         if self.impute_values:
-            from feature_engine.imputation import MeanMedianImputer,CategoricalImputer,ArbitraryNumberImputer,EndTailImputer,DropMissingData
+
             from sklearn.pipeline import Pipeline
             if self.impute_type == 'mean_median_imputer':
                 imputer = MeanMedianImputer(imputation_method='median', variables=self.columns)
@@ -745,10 +749,16 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
                 imputer = CategoricalImputer(variables=self.columns)
             imputer.fit(df)
             df= imputer.transform(df)
-        if self.drop_na:
+        if self.fillna:
+            df = df.fillna(method=self.fillna_method)
+        if self.drop_na_col:
             imputer = DropMissingData(missing_only=True)
             imputer.fit(df)
             df= imputer.transform(df)
+        if self.drop_na_rows:
+            #df = df[~df.isin([np.nan, np.inf, -np.inf]).any(1)]
+            df = df.dropna(axis=0)
+        print(f"Shape of dataframe after transform is {df.shape}")
         return df
 class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
     def __init__(self, columns,create_new_col = True,last_ticks=10):
@@ -776,6 +786,7 @@ class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
                 df[f'last_tick_{col}_{self.last_ticks}']  = (arr[:, :-1] > arr[:, [-1]]).sum(axis=1)
             else:
                 df[col] = (arr[:, :-1] > arr[:, [-1]]).sum(axis=1)
+        print(f"Shape of dataframe after transform is {df.shape}")
         return df
 
 def convert_todate_deduplicate(df):
@@ -795,52 +806,40 @@ class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):
-        df.index = pd.to_datetime(df.index)
-        df = df.sort_index()
-        df = df[~df.index.duplicated(keep='first')]         
+        #df.index = pd.to_datetime(df.index)
+        #df = df.sort_index()
+        #df = df[~df.index.duplicated(keep='first')]         
         for col in self.columns:
             for breach_type in self.breach_type:
                 if self.create_new_col:
-                    col_name = f'last_tick_{self.breach_type}_{col}_{self.last_ticks}'
+                    col_name = f'last_tick_{breach_type}_{col}_{self.last_ticks}'
                 else:
                     col_name = col
-                print(df[col].dtypes)
-                if breach_type == 'mean':
-                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                            .apply(lambda x: (x[-1] > x[:-1]).mean())
-                            .astype(int))
+                if breach_type == 'morethan':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x[-1] > x[:-1]).sum()).fillna(0)
+                elif breach_type == 'lessthan':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x[-1] < x[:-1]).sum()).fillna(0)
+                elif breach_type == 'mean':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].mean()).sum()).fillna(0).astype(int)
                 elif breach_type == 'min':
-                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                            .apply(lambda x: (x[-1] > x[:-1]).min())
-                            .astype(int))
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].min()).sum()).fillna(0).astype(int)
                 elif breach_type == 'max':
-                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                            .apply(lambda x: (x[-1] > x[:-1]).max())
-                            .astype(int))
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].max()).sum()).fillna(0).astype(int)
                 elif breach_type == 'median':
-                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                            .apply(lambda x: (x[-1] > x[:-1]).median())
-                            .astype(int))
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].median()).sum()).fillna(0).astype(int)
                 elif breach_type == '10thquantile':
-                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                            .apply(lambda x: (x[-1] > x[:-1]).quantile(0.1))
-                            .astype(int))
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].quantile(0.1)).sum()).fillna(0).astype(int)
                 elif breach_type == '25thquantile':
-                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                            .apply(lambda x: (x[-1] > x[:-1]).quantile(0.25))
-                            .astype(int))
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].quantile(0.25)).sum()).fillna(0).astype(int)
                 elif breach_type == '75thquantile':
-                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                            .apply(lambda x: (x[-1] > x[:-1]).quantile(0.75))
-                            .astype(int))
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].quantile(0.75)).sum()).fillna(0).astype(int)
                 elif breach_type == '95thquantile':
-                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
-                            .apply(lambda x: (x[-1] > x[:-1]).quantile(0.95))
-                            .astype(int))
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].quantile(0.95)).sum()).fillna(0).astype(int)
                 else:
-                    df[col_name] = (df[col].rolling(self.last_ticks+1, min_periods=1)
+                    df[col_name] = (df[col].rolling(self.last_ticks, min_periods=1)
                             .apply(lambda x: (x[-1] > x[:-1]).mean())
                             .astype(int))
+        print(f"Shape of dataframe after transform is {df.shape}")
         return df
 
 class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
@@ -854,10 +853,11 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
         return self    
 
     def transform(self, df):
-        df = convert_todate_deduplicate(df)
+        #df = convert_todate_deduplicate(df)
         for r1,r2 in self.hour_range:
             for rt in self.range_type:
                 if rt == 'price_range':
+                    print(df[self.first_col])
                     s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max() - df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).min()
                 elif rt == 'price_deviation_max_first_col':
                     s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).mean() - df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max()
@@ -876,6 +876,7 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
             s1 = pd.DataFrame(s1,columns=[f"range_{r2.replace(':','')}"])
             df=pd.merge(df,s1, how='outer', left_index=True, right_index=True)
             df[f"range_{r2.replace(':','')}"] = df[f"range_{r2.replace(':','')}"].fillna(method='ffill')
+        print(f"Shape of dataframe after transform is {df.shape}")
         return df
 
 class PriceVelocity(BaseEstimator, TransformerMixin):
@@ -894,7 +895,8 @@ class PriceVelocity(BaseEstimator, TransformerMixin):
         df = df[~df.index.duplicated(keep='first')]         
         df[self.col_name] = df[self.shift_column].subtract(df.shift(self.shift, freq=self.freq)[self.shift_column])
         df[self.col_name] = df[self.col_name]/self.shift
-        df[self.col_name] = df[self.col_name].round(3)    
+        df[self.col_name] = df[self.col_name].round(3)   
+        print(f"Shape of dataframe after transform is {df.shape}") 
         return df
 
 class PricePerIncrement(BaseEstimator, TransformerMixin):
@@ -913,6 +915,7 @@ class PricePerIncrement(BaseEstimator, TransformerMixin):
         df = df[~df.index.duplicated(keep='first')]         
         df[self.col_name] = df[self.shift_column].subtract(df.shift(self.shift, freq=self.freq)[self.shift_column])
         df[self.col_name] = df[self.col_name].div(df[self.shift_column])*100
-        df[self.col_name] = df[self.col_name].round(3)    
+        df[self.col_name] = df[self.col_name].round(3)   
+        print(f"Shape of dataframe after transform is {df.shape}") 
         return df
 
