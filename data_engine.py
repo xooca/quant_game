@@ -688,14 +688,16 @@ class LabelCreator(BaseEstimator, TransformerMixin):
         return df
 
 class TechnicalIndicator(BaseEstimator, TransformerMixin):
-    def __init__(self):
+    def __init__(self,method_type = ['volumn_','volatile_','transform_','cycle_','pattern_','stats_','math_','overlap_']):
         self.all_methods = []
+        self.method_type = method_type
+
+    def fit(self, X, y=None):
         a = dict(Signals.__dict__)
         for a1,a2 in a.items():
             self.all_methods.append(a1)
         self.all_methods = [m1 for m1,m2 in a.items() if m1[:1]!='_']
-        
-    def fit(self, X, y=None):
+        self.all_method = [m for m in self.all_method for mt in self.method_type if mt in m]
         return self    # Nothing to do in fit in this scenario
     
     def transform(self, df):
@@ -713,19 +715,24 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
         return sig.df
 
 class NormalizeDataset(BaseEstimator, TransformerMixin):
-    def __init__(self, columns = [],impute_values=False,impute_type = 'categorical',convert_to_floats = False,arbitrary_impute_variable=99,drop_na_col=False,drop_na_rows=False,
+    def __init__(self, column_pattern = [],columns = [],impute_values=False,impute_type = 'categorical',convert_to_floats = False,arbitrary_impute_variable=99,drop_na_col=False,drop_na_rows=False,
     fillna = False,fillna_method = 'bfill'):
         self.impute_values = impute_values
         self.convert_to_floats = convert_to_floats
-        self.columns = columns
         self.impute_type = impute_type
         self.arbitrary_impute_variable = arbitrary_impute_variable
         self.drop_na_col = drop_na_col
         self.drop_na_rows = drop_na_rows
         self.fillna_method = fillna_method
         self.fillna = fillna
+        self.column_pattern = column_pattern
+        self.columns = columns
 
-    def fit(self, X, y=None):
+
+    def fit(self, df, y=None):
+        if len(self.columns) == 0:
+            self.columns = [m for m in df.columns.tolist() for mt in self.column_pattern if mt in m]
+            self.columns = list(set(self.columns))
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):
@@ -761,13 +768,17 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
         print(f"Shape of dataframe after transform is {df.shape}")
         return df
 class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,create_new_col = True,last_ticks=10):
+    def __init__(self, column_pattern=[],columns=[],create_new_col = True,last_ticks=10):
         self.columns = columns
         self.last_ticks = last_ticks
         self.create_new_col = create_new_col
+        self.column_pattern = column_pattern
         
-    def fit(self, X, y=None):
-        return self    # Nothing to do in fit in this scenario
+    def fit(self, df, y=None):
+        if len(self.columns) == 0:
+            self.columns = [m for m in df.columns.tolist() for mt in self.column_pattern if mt in m]
+            self.columns = list(set(self.columns))
+        return self   # Nothing to do in fit in this scenario
     
     def rolling_window(self,a, window):
         shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
@@ -796,13 +807,17 @@ def convert_todate_deduplicate(df):
     return df
 
 class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,create_new_col = True,last_ticks='10min',breach_type = ['mean']):
+    def __init__(self, column_pattern=[],columns=[],create_new_col = True,last_ticks='10min',breach_type = ['mean']):
         self.columns = columns
         self.last_ticks = last_ticks
         self.create_new_col = create_new_col
         self.breach_type = breach_type
+        self.column_pattern = column_pattern
         
-    def fit(self, X, y=None):
+    def fit(self, df, y=None):
+        if len(self.columns) == 0:
+            self.columns = [m for m in df.columns.tolist() for mt in self.column_pattern if mt in m]
+            self.columns = list(set(self.columns))
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):
@@ -842,6 +857,55 @@ class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
         print(f"Shape of dataframe after transform is {df.shape}")
         return df
 
+class ValueLastTickBreachCount(BaseEstimator, TransformerMixin):
+    def __init__(self, columns=[],column_pattern=[],create_new_col = True,last_ticks='5',breach_type = ['morethan'],verbose=False):
+        self.columns = columns
+        self.last_ticks = last_ticks
+        self.create_new_col = create_new_col
+        self.breach_type = breach_type
+        self.self.verbose = self.verbose
+        self.column_pattern = column_pattern
+        
+    def fit(self, df, y=None):
+        if len(self.columns) == 0:
+            self.columns = [m for m in df.columns.tolist() for mt in self.column_pattern if mt in m]
+            self.columns = list(set(self.columns))
+        return self    # Nothing to do in fit in this scenario
+
+    def transform(self, df):        
+        for col in self.columns:
+            for breach_type in self.breach_type:
+                if self.create_new_col:
+                    col_name = f'last_tick_{breach_type}_{col}_{self.last_ticks}'
+                else:
+                    col_name = col
+                if breach_type == 'morethan':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x[-1] > x[:-1]).sum()).fillna(0)
+                elif breach_type == 'lessthan':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x[-1] < x[:-1]).sum()).fillna(0)
+                elif breach_type == 'mean':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].mean()).sum()).fillna(0).astype(int)
+                elif breach_type == 'min':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].min()).sum()).fillna(0).astype(int)
+                elif breach_type == 'max':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].max()).sum()).fillna(0).astype(int)
+                elif breach_type == 'median':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].median()).sum()).fillna(0).astype(int)
+                elif breach_type == '10thquantile':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].quantile(0.1)).sum()).fillna(0).astype(int)
+                elif breach_type == '25thquantile':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].quantile(0.25)).sum()).fillna(0).astype(int)
+                elif breach_type == '75thquantile':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].quantile(0.75)).sum()).fillna(0).astype(int)
+                elif breach_type == '95thquantile':
+                    df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x > x[:].quantile(0.95)).sum()).fillna(0).astype(int)
+                else:
+                    df[col_name] = (df[col].rolling(self.last_ticks, min_periods=1)
+                            .apply(lambda x: (x[-1] > x[:-1]).mean())
+                            .astype(int))
+        if self.self.verbose:
+            print(f"Shape of dataframe after ValueLastTickBreachCount is {df.shape}")
+        return df
 class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
     def __init__(self, first_col = 'high',second_col='low',hour_range = [('09:00', '10:30'),('10:30', '11:30')],range_type=['price_range','price_deviation_max_first_col']):
         self.hour_range = hour_range
@@ -878,44 +942,60 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
             df[f"range_{r2.replace(':','')}"] = df[f"range_{r2.replace(':','')}"].fillna(method='ffill')
         print(f"Shape of dataframe after transform is {df.shape}")
         return df
-
 class PriceVelocity(BaseEstimator, TransformerMixin):
-    def __init__(self, freq='1min',shift=15,shift_column='close'):
+    def __init__(self, freq='D',shift=5,shift_column=['close','open'],shift_column_pattern=[],verbose=False):
         self.freq = freq
         self.shift = shift
         self.shift_column = shift_column
-        self.col_name = f'price_velocity_{shift_column}_{freq}_{shift}'
+        self.verbose = verbose
+        self.shift_column_pattern = shift_column_pattern
         
-    def fit(self, X, y=None):
-        return self    # Nothing to do in fit in this scenario
+    def fit(self, df, y=None):
+        if len(self.shift_column) == 0:
+            self.shift_column = [m for m in df.columns.tolist() for mt in self.shift_column_pattern if mt in m]
+            self.shift_column = list(set(self.shift_column))
+        return self     # Nothing to do in fit in this scenario
     
     def transform(self, df):
-        df.index = pd.to_datetime(df.index)
-        df = df.sort_index()
-        df = df[~df.index.duplicated(keep='first')]         
-        df[self.col_name] = df[self.shift_column].subtract(df.shift(self.shift, freq=self.freq)[self.shift_column])
-        df[self.col_name] = df[self.col_name]/self.shift
-        df[self.col_name] = df[self.col_name].round(3)   
-        print(f"Shape of dataframe after transform is {df.shape}") 
+        for shftcol in self.shift_column:
+            if self.freq is not None:
+                self.col_name = f'price_velocity_{shftcol}_{self.freq}_{self.shift}'
+                df[self.col_name] = df[shftcol].subtract(df.shift(self.shift, freq=self.freq)[shftcol])
+                df[self.col_name] = df[self.col_name].round(3)
+            else:
+                self.col_name = f'price_velocity_{shftcol}_{self.shift}'
+                df[self.col_name] = df[shftcol].subtract(df.shift(self.shift)[shftcol])
+                df[self.col_name] = df[self.col_name].round(3)
+        if self.verbose:
+            print(f"Shape of dataframe after RollingSubtractVelocity is {df.shape}") 
         return df
-
 class PricePerIncrement(BaseEstimator, TransformerMixin):
-    def __init__(self, freq='1min',shift=15,shift_column='close'):
+    def __init__(self, freq='D',shift=5,shift_column=['close','open'],shift_column_pattern=[],verbose=False):
         self.freq = freq
         self.shift = shift
         self.shift_column = shift_column
-        self.col_name = f'price_perincrement_{shift_column}_{freq}_{shift}'
+        self.verbose = verbose
+        self.shift_column_pattern = shift_column_pattern
         
-    def fit(self, X, y=None):
-        return self    # Nothing to do in fit in this scenario
+    def fit(self, df, y=None):
+        if len(self.shift_column) == 0:
+            self.shift_column = [m for m in df.columns.tolist() for mt in self.shift_column_pattern if mt in m]
+            self.shift_column = list(set(self.shift_column))
+        return self     # Nothing to do in fit in this scenario
     
     def transform(self, df):
-        df.index = pd.to_datetime(df.index)
-        df = df.sort_index()
-        df = df[~df.index.duplicated(keep='first')]         
-        df[self.col_name] = df[self.shift_column].subtract(df.shift(self.shift, freq=self.freq)[self.shift_column])
-        df[self.col_name] = df[self.col_name].div(df[self.shift_column])*100
-        df[self.col_name] = df[self.col_name].round(3)   
-        print(f"Shape of dataframe after transform is {df.shape}") 
+        for shftcol in self.shift_column:
+            if self.freq is not None:
+                self.col_name = f'price_pervelocity_{shftcol}_{self.freq}_{self.shift}'
+                df[self.col_name] = df[shftcol].subtract(df.shift(self.shift, freq=self.freq)[shftcol])
+                df[self.col_name] = df[self.col_name]/self.shift
+                df[self.col_name] = df[self.col_name].round(3)
+            else:
+                self.col_name = f'price_pervelocity_{shftcol}_{self.shift}'
+                df[self.col_name] = df[shftcol].subtract(df.shift(self.shift)[shftcol])
+                df[self.col_name] = df[self.col_name]/self.shift
+                df[self.col_name] = df[self.col_name].round(3)
+        if self.verbose:
+            print(f"Shape of dataframe after RollingSubtractVelocity is {df.shape}") 
         return df
 
