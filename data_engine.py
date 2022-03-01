@@ -790,10 +790,10 @@ class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
         return df
 
 def convert_todate_deduplicate(df):
-        df.index = pd.to_datetime(df.index)
-        df = df.sort_index()
-        df = df[~df.index.duplicated(keep='first')] 
-        return df
+    df.index = pd.to_datetime(df.index)
+    df = df.sort_index()
+    df = df[~df.index.duplicated(keep='first')] 
+    return df
 
 class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
     def __init__(self, columns,create_new_col = True,last_ticks='10min',breach_type = ['mean']):
