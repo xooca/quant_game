@@ -13,8 +13,8 @@ base_df = pd.read_csv(r'C:\Users\8prab\Google Drive\Work\trading\data\banknifty\
 from sklearn.pipeline import Pipeline
 pipe1 = Pipeline([
     ('nd', de.NormalizeDataset(columns = ['close','open','high','low'],impute_values=True,impute_type = 'mean_median_imputer',convert_to_floats = True)),
-    ('labelgenerator_1', de.LabelCreator(freq='1min',shift=-15,shift_column='close')),
-    ('labelgenerator_2', de.LabelCreator(freq='1min',shift=-30,shift_column='close')),
+  #  ('labelgenerator_1', de.LabelCreator(freq='1min',shift=-15,shift_column='close')),
+  #  ('labelgenerator_2', de.LabelCreator(freq='1min',shift=-30,shift_column='close')),
     ('tech_indicator', de.TechnicalIndicator(method_type = ['momentum','volatile','transform','pattern','overlap'])),
     ('nd2', de.NormalizeDataset(column_pattern = ['close','open','high','low','momentum','volatile','transform','pattern','overlap'],fillna=True,fillna_method='bfill')),
     ('nd3', de.NormalizeDataset(column_pattern = ['close','open','high','low','momentum','volatile','transform','pattern','overlap'],drop_na_rows=False,fillna=True,fillna_method='ffill')),
@@ -24,7 +24,6 @@ pipe1 = Pipeline([
 base_df = pipe1.fit(base_df).transform(base_df)
 
 column_pattern = ['close','open','high','low','momentum','volatile','transform','pattern','overlap']
-
 selected_cols = [m for m in base_df.columns.tolist() for mt in column_pattern if mt in m]
 
 pipe2 = Pipeline([
@@ -45,3 +44,4 @@ pipe3 = Pipeline([
     ('ppi2', de.PricePerIncrement(freq='10min',shift=5,shift_column=selected_cols,shift_column_pattern=[],verbose=False)),
     ])
 base_df = pipe3.fit(base_df).transform(base_df)
+base_df.to_csv('base.csv')
