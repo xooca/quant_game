@@ -22,23 +22,26 @@ pipe1 = Pipeline([
     #('nd3', de.NormalizeDataset(columns = ['close','open','high','low'],fillna=True)),
     ])
 base_df = pipe1.fit(base_df).transform(base_df)
-
+base_df.to_csv('base.csv')
 column_pattern = ['close','open','high','low','momentum','volatile','transform','pattern','overlap']
 selected_cols = [m for m in base_df.columns.tolist() for mt in column_pattern if mt in m]
 
 pipe2 = Pipeline([
+    ('rv1', de.RollingValues(columns=selected_cols,column_pattern=[],last_ticks=['10min','30min'],aggs=['mean','mean'],oper = ['-','='],verbose=True)),
+    ('rv2', de.RollingValues(columns=selected_cols,column_pattern=[],last_ticks=['10min','30min'],aggs=['max','max'],oper = ['-','='],verbose=True)),
+    ('rv3', de.RollingValues(columns=selected_cols,column_pattern=[],last_ticks=['5min','30min'],aggs=['max','max'],oper = ['-','='],verbose=True)),
     ('ltgvc', de.LastTicksGreaterValuesCount(column_pattern=[],columns=selected_cols,create_new_col = True,last_ticks=10)),
-    ('ltgvc1', de.LastTicksGreaterValuesCount(column_pattern=[],columns=selected_cols,create_new_col = True,last_ticks=30)),
+    ('ltgvc1', de.LastTicksGreaterValuesCount(column_pattern=[],columns=selected_cols,create_new_col = True,last_ticks=30)),  
     ('pdrhw', de.PriceDayRangeHourWise(first_col = 'high',second_col='low',hour_range = [('09:00', '10:30'),('10:30', '11:30')],range_type=['price_range','price_deviation_max_first_col'])),
     ('pv', de.PriceVelocity(freq='10min',shift=5,shift_column=selected_cols,shift_column_pattern=[],verbose=False)),
     ('pv2', de.PriceVelocity(freq='5min',shift=5,shift_column=selected_cols,shift_column_pattern=[],verbose=False)),
     ('ppi', de.PricePerIncrement(freq='D',shift=5,shift_column=selected_cols,shift_column_pattern=[],verbose=False)),
     ])
 base_df = pipe2.fit(base_df).transform(base_df)
-
+base_df.to_csv('base.csv')
 pipe3 = Pipeline([
-    ('pltbc', de.PriceLastTickBreachCount(column_pattern=[],columns=selected_cols,create_new_col = True,last_ticks='10min',breach_type = ['morethan','max'])),
-    ('pltbc2', de.PriceLastTickBreachCount(column_pattern=[],columns=selected_cols,create_new_col = True,last_ticks='60min',breach_type = ['morethan','max'])),
+    ('pltbc', de.PriceLastTickBreachCount(column_pattern=[],columns=selected_cols,last_ticks='10min',breach_type = ['morethan','max'])),
+    ('pltbc2', de.PriceLastTickBreachCount(column_pattern=[],columns=selected_cols,last_ticks='60min',breach_type = ['morethan','max'])),
     ('pdrhw2', de.PriceDayRangeHourWise(first_col = 'high',second_col='low',hour_range = [('09:00', '10:30'),('10:30', '11:30')],range_type=['price_range','price_deviation_max_first_col'])),
     ('pv3', de.PriceVelocity(freq='D',shift=5,shift_column=selected_cols,shift_column_pattern=[],verbose=False)),
     ('ppi2', de.PricePerIncrement(freq='10min',shift=5,shift_column=selected_cols,shift_column_pattern=[],verbose=False)),

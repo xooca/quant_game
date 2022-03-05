@@ -968,7 +968,7 @@ class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
         return df
 
 class RollingValues(BaseEstimator, TransformerMixin):
-    def __init__(self, columns=[],column_pattern=[],last_ticks=['5min','10min'],aggs=['mean','sum'],oper = ['+','='],verbose=True):
+    def __init__(self, columns=[],column_pattern=[],last_ticks=['5min','10min'],aggs=['mean','max'],oper = ['-','='],verbose=True):
         self.columns = columns
         self.last_ticks = last_ticks
         self.verbose = verbose
