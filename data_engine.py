@@ -10,11 +10,13 @@ import pickle
 from pathlib import Path
 from feature_engine.discretisation import EqualWidthDiscretiser
 from feature_engine.imputation import MeanMedianImputer,CategoricalImputer,ArbitraryNumberImputer,EndTailImputer,DropMissingData
+import logging
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 def unzip_folders(rootPath,pattern):
     for root, dirs, files in os.walk(rootPath):
         for filename in fnmatch.filter(files, pattern):
-            print(os.path.join(root, filename))
+            logging.info(os.path.join(root, filename))
             zipfile.ZipFile(os.path.join(root, filename)).extractall(os.path.join(root, os.path.splitext(filename)[0]))
             os.remove(os.path.join(root, filename))
 
@@ -32,20 +34,20 @@ def create_dataset(root_path,pattern,data_save_path,data_name,reset_df = False):
     base_df = pd.DataFrame(columns = ['name','date','time','open','high','low','close'])
     if not os.path.exists(f'{data_save_path}{data_name}/'):
         os.makedirs(f'{data_save_path}{data_name}/')
-        print(f'Created folder {data_save_path}{data_name}')
+        logging.info(f'Created folder {data_save_path}{data_name}')
 
     already_loaded_file_name = f'{data_save_path}{data_name}/already_loaded_files.pickle'
     csv_save_location = f'{data_save_path}{data_name}/{data_name}.csv'
-    print(f'Data save path is {csv_save_location}')
-    print(f'File with already loaded files is {already_loaded_file_name}')
+    logging.info(f'Data save path is {csv_save_location}')
+    logging.info(f'File with already loaded files is {already_loaded_file_name}')
     orig_cols = ['name','date','time','open','high','low','close']
     try:
         with open(already_loaded_file_name, 'rb') as handle:
             already_loaded_files = pickle.load(handle)
             already_loaded_files = [Path(col) for col in already_loaded_files]
-            print(f"Total files already saved {len(already_loaded_files)}")
+            logging.info(f"Total files already saved {len(already_loaded_files)}")
     except Exception as e1:
-        print(f"File {already_loaded_file_name} is not loaded because of error : {e1}")
+        logging.info(f"File {already_loaded_file_name} is not loaded because of error : {e1}")
         already_loaded_files = []
     for root, dirs, files in os.walk(root_path):
         for filename in fnmatch.filter(files, pattern):
@@ -54,19 +56,19 @@ def create_dataset(root_path,pattern,data_save_path,data_name,reset_df = False):
     files_to_be_loaded = [f for f in files_list if f not in already_loaded_files]
     files_to_be_loaded = list(dict.fromkeys(files_to_be_loaded))
     files_list = list(dict.fromkeys(files_list))
-    print(f"Total files detected {len(files_list)}")
-    print(f"Total new files detected {len(files_to_be_loaded)}")
+    logging.info(f"Total files detected {len(files_list)}")
+    logging.info(f"Total new files detected {len(files_to_be_loaded)}")
     try:
         base_df = pd.read_csv(csv_save_location)
     except Exception as e1:
-        print(f"Error while loading dataframe from {csv_save_location} because of error : {e1}")
+        logging.info(f"Error while loading dataframe from {csv_save_location} because of error : {e1}")
         base_df = pd.DataFrame(columns = ['open','high','low','close'])
         files_to_be_loaded = files_list
     if len(base_df) == 0 or reset_df:
         files_to_be_loaded = files_list
-        print(f"We are going to reload all the data")
+        logging.info(f"We are going to reload all the data")
 
-    print(f"Number of files to be loaded {len(files_to_be_loaded)}")
+    logging.info(f"Number of files to be loaded {len(files_to_be_loaded)}")
     base_df_st_shape = base_df.shape
     for i,f_name in enumerate(files_to_be_loaded,1):
         f_name = os.path.join(root, f_name)
@@ -76,20 +78,20 @@ def create_dataset(root_path,pattern,data_save_path,data_name,reset_df = False):
             tmp_df.columns = orig_cols
             tmp_df = convert_df_to_timeseries(tmp_df)
             base_df = pd.concat([base_df,tmp_df],axis=0)
-            print(len(files_to_be_loaded)-i,base_df.shape,f_name)
+            logging.info(len(files_to_be_loaded)-i,base_df.shape,f_name)
             already_loaded_files.append(f_name)
         except Exception as e1:
             bad_files.append(f_name)
-            print(f"File {f_name} is not loaded because of error : {e1}")
+            logging.info(f"File {f_name} is not loaded because of error : {e1}")
     with open(already_loaded_file_name, 'wb') as handle:
         pickle.dump(already_loaded_files, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    print(f"Shape of the dataframe before duplicate drop is {base_df.shape}")
+    logging.info(f"Shape of the dataframe before duplicate drop is {base_df.shape}")
     base_df = base_df.drop_duplicates()
-    print(f"Shape of the dataframe after duplicate drop is {base_df.shape}")
+    logging.info(f"Shape of the dataframe after duplicate drop is {base_df.shape}")
     if base_df_st_shape != base_df.shape:
         base_df = base_df.sort_index()
         base_df.to_csv(csv_save_location, index_label=False )
-        print(f"Saving dataframe to location {csv_save_location}")
+        logging.info(f"Saving dataframe to location {csv_save_location}")
     return base_df
 
 class Signals:
@@ -685,7 +687,7 @@ class LabelCreator(BaseEstimator, TransformerMixin):
         df = df.sort_index()
         df = df[~df.index.duplicated(keep='first')]
         df[self.label_name] = df.shift(self.shift, freq=self.freq)[self.shift_column].subtract(df[self.shift_column]).apply(self.label_generator)  
-        print(f"Shape of dataframe after transform is {df.shape}") 
+        logging.info(f"Shape of dataframe after transform is {df.shape}") 
         return df
 
 class TechnicalIndicator(BaseEstimator, TransformerMixin):
@@ -702,7 +704,7 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
         return self    # Nothing to do in fit in this scenario
     
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         sig = Signals(df)
         self.methods_run = []
         self.methods_notrun = []
@@ -711,9 +713,9 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
                 exec(f'sig.{f}()')
                 self.methods_run.append(f)
             except Exception as e1:
-                print(f"Function {f} was unable to run, Error is {e1}")
+                logging.info(f"Function {f} was unable to run, Error is {e1}")
                 self.methods_notrun.append(f)
-        print(f"Shape of dataframe after TechnicalIndicator is {df.shape}")
+        logging.info(f"Shape of dataframe after TechnicalIndicator is {df.shape}")
         return sig.df
 
 class NormalizeDataset(BaseEstimator, TransformerMixin):
@@ -738,7 +740,7 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         df = convert_todate_deduplicate(df)
         if self.convert_to_floats:
             for col in self.columns:
@@ -768,7 +770,7 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
         if self.drop_na_rows:
             #df = df[~df.isin([np.nan, np.inf, -np.inf]).any(1)]
             df = df.dropna(axis=0)
-        print(f"Shape of dataframe after NormalizeDataset is {df.shape}")
+        logging.info(f"Shape of dataframe after NormalizeDataset is {df.shape}")
         return df
 class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
     def __init__(self, column_pattern=[],columns=[],create_new_col = True,last_ticks=10):
@@ -789,21 +791,21 @@ class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
         return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         df.index = pd.to_datetime(df.index)
         df = df.sort_index()
         df = df[~df.index.duplicated(keep='first')]         
         for col in self.columns:
-            print(f"LastTicksGreaterValuesCount : {col} : f'last_tick_{col}_{self.last_ticks}'")
+            logging.info(f"LastTicksGreaterValuesCount : {col} : f'last_tick_{col}_{self.last_ticks}'")
             x = np.concatenate([[np.nan] * (self.last_ticks), df[col].values])
             arr = self.rolling_window(x, self.last_ticks + 1)
-            #print(arr)
+            #logging.info(arr)
             if self.create_new_col:
                 #df[f'last_tick_{col}_{self.last_ticks}'] = self.rolling_window(x, self.#last_ticks + 1)
                 df[f'last_tick_{col}_{self.last_ticks}']  = (arr[:, :-1] > arr[:, [-1]]).sum(axis=1)
             else:
                 df[col] = (arr[:, :-1] > arr[:, [-1]]).sum(axis=1)
-        print(f"Shape of dataframe after LastTicksGreaterValuesCount is {df.shape}")
+        logging.info(f"Shape of dataframe after LastTicksGreaterValuesCount is {df.shape}")
         return df
 
 def convert_todate_deduplicate(df):
@@ -827,19 +829,19 @@ class PriceLastTickBreachCountv1(BaseEstimator, TransformerMixin):
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         #df.index = pd.to_datetime(df.index)
         #df = df.sort_index()
         #df = df[~df.index.duplicated(keep='first')]         
         for col in self.columns:
-            #print(f"PriceLastTickBreachCount : {col}")
+            #logging.info(f"PriceLastTickBreachCount : {col}")
             for breach_type in self.breach_type:
                 
                 if self.create_new_col:
                     col_name = f'last_tick_{breach_type}_{col}_{self.last_ticks}'
                 else:
                     col_name = col
-                print(f"PriceLastTickBreachCount : {breach_type} : {col} : {col_name}")
+                logging.info(f"PriceLastTickBreachCount : {breach_type} : {col} : {col_name}")
                 if breach_type == 'morethan':
                     df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x[-1] > x[:-1]).sum()).fillna(0)
                 elif breach_type == 'lessthan':
@@ -864,7 +866,7 @@ class PriceLastTickBreachCountv1(BaseEstimator, TransformerMixin):
                     df[col_name] = (df[col].rolling(self.last_ticks, min_periods=1)
                             .apply(lambda x: (x[-1] > x[:-1]).mean())
                             .astype(int))
-        print(f"Shape of dataframe after PriceLastTickBreachCount is {df.shape}")
+        logging.info(f"Shape of dataframe after PriceLastTickBreachCount is {df.shape}")
         return df
 
 class ValueLastTickBreachCount(BaseEstimator, TransformerMixin):
@@ -883,7 +885,7 @@ class ValueLastTickBreachCount(BaseEstimator, TransformerMixin):
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):   
-        print('*'*100)     
+        logging.info('*'*100)     
         for col in self.columns:
             for breach_type in self.breach_type:
                 
@@ -891,7 +893,7 @@ class ValueLastTickBreachCount(BaseEstimator, TransformerMixin):
                     col_name = f'last_tick_{breach_type}_{col}_{self.last_ticks}'
                 else:
                     col_name = col
-                print(f"ValueLastTickBreachCount : {breach_type} : {col} : {col_name}")
+                logging.info(f"ValueLastTickBreachCount : {breach_type} : {col} : {col_name}")
                 if breach_type == 'morethan':
                     df[col_name] = df[col].rolling(self.last_ticks, min_periods=1).apply(lambda x: (x[-1] > x[:-1]).sum()).fillna(0)
                 elif breach_type == 'lessthan':
@@ -917,7 +919,7 @@ class ValueLastTickBreachCount(BaseEstimator, TransformerMixin):
                             .apply(lambda x: (x[-1] > x[:-1]).mean())
                             .astype(int))
         if self.self.verbose:
-            print(f"Shape of dataframe after ValueLastTickBreachCount is {df.shape}")
+            logging.info(f"Shape of dataframe after ValueLastTickBreachCount is {df.shape}")
         return df
 
 class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
@@ -934,9 +936,9 @@ class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):
-        print('*'*100)    
+        logging.info('*'*100)    
         for breach_type in self.breach_type:
-            print(f"PriceLastTickBreachCount : {breach_type}")
+            logging.info(f"PriceLastTickBreachCount : {breach_type}")
             if breach_type == 'morethan':
                 tmpdf = df[self.columns].rolling(self.last_ticks, min_periods=1).apply(lambda x: sum(x[-1] > np.array(x[:-1]))).fillna(0)
             elif breach_type == 'lessthan':
@@ -962,7 +964,7 @@ class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
             col_names = [f"{col}_{self.last_ticks}_{'_'.join(self.breach_type)}_last_tick_" for col in self.columns]
             tmpdf.columns = col_names
             df = pd.merge(df, tmpdf, left_index=True, right_index=True,how='left')
-        print(f"Shape of dataframe after PriceLastTickBreachCount is {df.shape}")
+        logging.info(f"Shape of dataframe after PriceLastTickBreachCount is {df.shape}")
         return df
 
 class RollingValues(BaseEstimator, TransformerMixin):
@@ -981,10 +983,10 @@ class RollingValues(BaseEstimator, TransformerMixin):
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):   
-        print('*'*100)
+        logging.info('*'*100)
         eval_stmt = '' 
         for lt,oper,agg in zip(self.last_ticks,self.oper,self.aggs):
-            #print(lt,oper,agg)
+            #logging.info(lt,oper,agg)
             tmpst = f"df[{self.columns}].rolling('{lt}', min_periods=1).{agg}() {oper}"
             eval_stmt = eval_stmt + tmpst
         tmpdf = eval(eval_stmt[:-1])
@@ -992,7 +994,7 @@ class RollingValues(BaseEstimator, TransformerMixin):
         tmpdf.columns = col_names
         df = pd.merge(df, tmpdf, left_index=True, right_index=True,how='left')
         if self.self.verbose:
-            print(f"Shape of dataframe after RollingValues is {df.shape}")
+            logging.info(f"Shape of dataframe after RollingValues is {df.shape}")
         return df
 class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
     def __init__(self, first_col = 'high',second_col='low',hour_range = [('09:00', '10:30'),('10:30', '11:30')],range_type=['price_range','price_deviation_max_first_col']):
@@ -1005,13 +1007,13 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
         return self    
 
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         #df = convert_todate_deduplicate(df)
         for r1,r2 in self.hour_range:
             for rt in self.range_type:
-                print(f"PriceDayRangeHourWise : {self.first_col} : {self.second_col } : {self.hour_range} : {self.range_type}")
+                logging.info(f"PriceDayRangeHourWise : {self.first_col} : {self.second_col } : {self.hour_range} : {self.range_type}")
                 if rt == 'price_range':
-                    #print(df[self.first_col])
+                    #logging.info(df[self.first_col])
                     s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max() - df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).min()
                 elif rt == 'price_deviation_max_first_col':
                     s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).mean() - df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max()
@@ -1030,7 +1032,7 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
             s1 = pd.DataFrame(s1,columns=[f"range_{r2.replace(':','')}"])
             df=pd.merge(df,s1, how='outer', left_index=True, right_index=True)
             df[f"range_{r2.replace(':','')}"] = df[f"range_{r2.replace(':','')}"].fillna(method='ffill')
-        print(f"Shape of dataframe after PriceDayRangeHourWise is {df.shape}")
+        logging.info(f"Shape of dataframe after PriceDayRangeHourWise is {df.shape}")
         return df
 class PriceVelocityv2(BaseEstimator, TransformerMixin):
     def __init__(self, freq='D',shift=5,shift_column=['close','open'],shift_column_pattern=[],verbose=False):
@@ -1047,12 +1049,12 @@ class PriceVelocityv2(BaseEstimator, TransformerMixin):
         return self     # Nothing to do in fit in this scenario
     
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         for shftcol in self.shift_column:
             
             if self.freq is not None:
                 self.col_name = f'price_velocity_{shftcol}_{self.freq}_{self.shift}'
-                print(f"PriceVelocity : {shftcol} : {self.col_name}")
+                logging.info(f"PriceVelocity : {shftcol} : {self.col_name}")
                 a = df.shift(self.shift, freq=self.freq)[shftcol]
                 a.name = self.col_name
                 df = pd.merge(df, a, left_index=True, right_index=True,how='left')
@@ -1060,14 +1062,14 @@ class PriceVelocityv2(BaseEstimator, TransformerMixin):
                 df[self.col_name] = df[self.col_name].round(3)
             else:
                 self.col_name = f'price_velocity_{shftcol}_{self.shift}'
-                print(f"PriceVelocity : {shftcol} : {self.col_name}")
+                logging.info(f"PriceVelocity : {shftcol} : {self.col_name}")
                 a = df.shift(self.shift)[shftcol]
                 a.name = self.col_name
                 df = pd.merge(df, a, left_index=True, right_index=True,how='left')
                 df[self.col_name] = df[shftcol] - df[self.col_name]
                 df[self.col_name] = df[self.col_name].round(3)
         if self.verbose:
-            print(f"Shape of dataframe after PriceVelocity is {df.shape}") 
+            logging.info(f"Shape of dataframe after PriceVelocity is {df.shape}") 
         return df
 
 class PriceVelocity(BaseEstimator, TransformerMixin):
@@ -1085,7 +1087,7 @@ class PriceVelocity(BaseEstimator, TransformerMixin):
         return self     # Nothing to do in fit in this scenario
     
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         if self.freq is not None:
             tmpdf = df[self.shift_column].subtract(df.shift(self.shift,freq=self.freq)[self.shift_column])
             col_names = [f'{shftcol}_{self.freq}_{self.shift}_price_velocity' for shftcol in self.shift_column]
@@ -1096,7 +1098,7 @@ class PriceVelocity(BaseEstimator, TransformerMixin):
             tmpdf.columns = col_names
         df = pd.merge(df, tmpdf, left_index=True, right_index=True,how='left')
         if self.verbose:
-            print(f"Shape of dataframe after PriceVelocity is {df.shape}") 
+            logging.info(f"Shape of dataframe after PriceVelocity is {df.shape}") 
         return df
 class PriceVelocityv1(BaseEstimator, TransformerMixin):
     def __init__(self, freq='D',shift=5,shift_column=['close','open'],shift_column_pattern=[],verbose=False):
@@ -1113,9 +1115,9 @@ class PriceVelocityv1(BaseEstimator, TransformerMixin):
         return self     # Nothing to do in fit in this scenario
     
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         for shftcol in self.shift_column:
-            print(f"PriceVelocity : {shftcol}")
+            logging.info(f"PriceVelocity : {shftcol}")
             if self.freq is not None:
                 self.col_name = f'price_velocity_{shftcol}_{self.freq}_{self.shift}'
                 #df[self.col_name] = df[shftcol].subtract(df.shift(self.shift, freq=self.freq)[shftcol])
@@ -1127,7 +1129,7 @@ class PriceVelocityv1(BaseEstimator, TransformerMixin):
                 df[self.col_name] = df[shftcol] - df.shift(self.shift)[shftcol]
                 df[self.col_name] = df[self.col_name].round(3)
         if self.verbose:
-            print(f"Shape of dataframe after PriceVelocity is {df.shape}") 
+            logging.info(f"Shape of dataframe after PriceVelocity is {df.shape}") 
         return df
 class PricePerIncrementv1(BaseEstimator, TransformerMixin):
     def __init__(self, freq='D',shift=5,shift_column=['close','open'],shift_column_pattern=[],verbose=False):
@@ -1144,12 +1146,12 @@ class PricePerIncrementv1(BaseEstimator, TransformerMixin):
         return self     # Nothing to do in fit in this scenario
     
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         for shftcol in self.shift_column:
             
             if self.freq is not None:
                 self.col_name = f'price_pervelocity_{shftcol}_{self.freq}_{self.shift}'
-                print(f"PricePerIncrement : {shftcol} : {self.col_name}")
+                logging.info(f"PricePerIncrement : {shftcol} : {self.col_name}")
                 a = df.shift(self.shift, freq=self.freq)[shftcol]
                 a.name = self.col_name
                 df = pd.merge(df, a, left_index=True, right_index=True,how='left')
@@ -1158,7 +1160,7 @@ class PricePerIncrementv1(BaseEstimator, TransformerMixin):
                 df[self.col_name] = df[self.col_name].round(4)
             else:
                 self.col_name = f'price_pervelocity_{shftcol}_{self.shift}'
-                print(f"PricePerIncrement : {shftcol} : {self.col_name}")
+                logging.info(f"PricePerIncrement : {shftcol} : {self.col_name}")
                 a = df.shift(self.shift)[shftcol]
                 a.name = self.col_name
                 df = pd.merge(df, a, left_index=True, right_index=True,how='left')
@@ -1166,7 +1168,7 @@ class PricePerIncrementv1(BaseEstimator, TransformerMixin):
                 df[self.col_name] = df[self.col_name]/int(self.shift)
                 df[self.col_name] = df[self.col_name].round(4)
         if self.verbose:
-            print(f"Shape of dataframe after PriceVelocity is {df.shape}") 
+            logging.info(f"Shape of dataframe after PriceVelocity is {df.shape}") 
         return df
 class PricePerIncrement(BaseEstimator, TransformerMixin):
     def __init__(self, freq='D',shift=5,shift_column=['close','open'],shift_column_pattern=[],verbose=False):
@@ -1183,7 +1185,7 @@ class PricePerIncrement(BaseEstimator, TransformerMixin):
         return self     # Nothing to do in fit in this scenario
     
     def transform(self, df):
-        print('*'*100)
+        logging.info('*'*100)
         if self.freq is not None:
             tmpdf = df[self.shift_column].subtract(df.shift(self.shift,freq=self.freq)[self.shift_column])
             
@@ -1196,5 +1198,5 @@ class PricePerIncrement(BaseEstimator, TransformerMixin):
         tmpdf = tmpdf/self.shift
         df = pd.merge(df, tmpdf, left_index=True, right_index=True,how='left')
         if self.verbose:
-            print(f"Shape of dataframe after PricePerVelocity is {df.shape}") 
+            logging.info(f"Shape of dataframe after PricePerVelocity is {df.shape}") 
         return df
