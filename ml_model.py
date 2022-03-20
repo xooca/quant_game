@@ -21,6 +21,7 @@ pipe1 = Pipeline([
     ('tech_indicator', de.TechnicalIndicator(method_type = ['momentum','volatile','transform','pattern','overlap'])),
     ('nd2', de.NormalizeDataset(column_pattern = ['close','open','high','low','momentum','volatile','transform','pattern','overlap'],fillna=True,fillna_method='bfill')),
     ('nd3', de.NormalizeDataset(column_pattern = ['close','open','high','low','momentum','volatile','transform','pattern','overlap'],drop_na_rows=False,fillna=True,fillna_method='ffill')),
+    ('fd1', de.FilterData(start_date='2021-01-01',end_date=None)),
     
     #('nd3', de.NormalizeDataset(columns = ['close','open','high','low'],fillna=True)),
     ])
@@ -43,7 +44,7 @@ pipe3 = Pipeline([
 pipe4 = Pipeline([
     ('pltbc', de.PriceLastTickBreachCount(column_pattern=[],columns=selected_cols,last_ticks='10min',breach_type = ['morethan','max'])),
     ('pltbc2', de.PriceLastTickBreachCount(column_pattern=[],columns=selected_cols,last_ticks='60min',breach_type = ['morethan','max'])),
-    ('pdrhw2', de.PriceDayRangeHourWise(first_col = 'high',second_col='low',hour_range = [('09:00', '10:30'),('10:30', '11:30')],range_type=['price_range','price_deviation_max_first_col'])),
+    ('pdrhw2', de.PriceDayRangeHourWise(first_col = 'open',second_col='close',hour_range = [('09:00', '10:30'),('10:30', '11:30')],range_type=['price_range','price_deviation_max_first_col'])),
     ('pv3', de.PriceVelocity(freq='D',shift=5,shift_column=selected_cols,shift_column_pattern=[],verbose=True)),
     ('ppi2', de.PricePerIncrement(freq='10min',shift=5,shift_column=selected_cols,shift_column_pattern=[],verbose=True)),
     ])
@@ -80,4 +81,4 @@ def run_pipeline(pipe_list,df,pipeinfo_loc,data_loc,load_previous = True):
 pipe_list =[pipe1,pipe2,pipe3,pipe4,pipe5]
 pipeinfo_loc = r"E:\\\data\\trading\\pipe.pkl"
 data_loc = r"E:\\\data\\trading\\base.csv"
-run_pipeline(pipe_list,base_df,pipeinfo_loc,data_loc,load_previous=True)
+run_pipeline(pipe_list,base_df,pipeinfo_loc,data_loc,load_previous=False)

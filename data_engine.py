@@ -1039,9 +1039,14 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
             s1 = s1.sort_index()
             c = [int(i) for i in r2.split(':')]
             s1.index = s1.index + pd.DateOffset(minutes=c[0]*60 + c[1])
-            col_name = f"range_{r2.replace(':','')}"
+            col_name = f"PDR_{self.first_col}_{self.second_col}_{rt}_{r1.replace(':','')}_{r2.replace(':','')}"
             s1.name = col_name
+            logging.info(col_name)
+            logging.info(df.columns.tolist())
+            logging.info(s1)
             df=pd.merge(df,s1, how='outer', left_index=True, right_index=True)
+            logging.info(df.columns.tolist())
+            logging.info(df)
             df[col_name] = df[col_name].fillna(method='ffill')
         logging.info(f"Shape of dataframe after PriceDayRangeHourWise is {df.shape}")
         return df
@@ -1210,4 +1215,30 @@ class PricePerIncrement(BaseEstimator, TransformerMixin):
         df = pd.merge(df, tmpdf, left_index=True, right_index=True,how='left')
         if self.verbose:
             logging.info(f"Shape of dataframe after PricePerVelocity is {df.shape}") 
+        return df
+
+class FilterData(BaseEstimator, TransformerMixin):
+    def __init__(self, start_date=None,end_date=None,filter_rows=None,verbose=False):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.filter_rows = filter_rows
+        self.verbose = verbose
+        
+    def fit(self, df, y=None):
+        return self     # Nothing to do in fit in this scenario
+    
+    def transform(self, df):
+        logging.info('*'*100)
+        if self.verbose:
+            logging.info(f"Shape of dataframe before FilterData is {df.shape}") 
+        if self.start_date is not None and self.end_date is None:
+            df = df.sort_index().loc[self.start_date:]
+        elif self.start_date is None and self.end_date is not None:
+            df = df.sort_index().loc[:self.end_date]
+        else:
+            df = df.sort_index()
+        if self.filter_rows is not None:
+            df = df[:self.filter_rows]
+        if self.verbose:
+            logging.info(f"Shape of dataframe after FilterData is {df.shape}") 
         return df
