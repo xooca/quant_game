@@ -741,36 +741,46 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         logging.info('*'*100)
+        info_list = []
         df = convert_todate_deduplicate(df)
         if self.convert_to_floats:
             for col in self.columns:
                 df[col] = df[col].astype('float')
+                info_list.append('convert_to_floats')
         if self.impute_values:
 
             from sklearn.pipeline import Pipeline
             if self.impute_type == 'mean_median_imputer':
                 imputer = MeanMedianImputer(imputation_method='median', variables=self.columns)
+                info_list.append('mean_median_imputer')
             elif self.impute_type == 'categorical':
                 imputer = CategoricalImputer(variables=self.columns)
+                info_list.append('categorical')
             elif self.impute_type == 'arbitrary':
                 if isinstance(self.arbitrary_impute_variable, dict):
                     imputer = ArbitraryNumberImputer(imputer_dict = self.arbitrary_impute_variable)
+                    
                 else:
                     imputer = ArbitraryNumberImputer(variables = self.columns,arbitrary_number = self.arbitrary_number)
+                info_list.append('arbitrary')
             else:
                 imputer = CategoricalImputer(variables=self.columns)
+                info_list.append('categorical')
             imputer.fit(df)
             df= imputer.transform(df)
         if self.fillna:
             df = df.fillna(method=self.fillna_method)
+            info_list.append('fillna')
         if self.drop_na_col:
             imputer = DropMissingData(missing_only=True)
             imputer.fit(df)
             df= imputer.transform(df)
+            info_list.append('drop_na_col')
         if self.drop_na_rows:
             #df = df[~df.isin([np.nan, np.inf, -np.inf]).any(1)]
             df = df.dropna(axis=0)
-        logging.info(f"Shape of dataframe after NormalizeDataset is {df.shape}")
+            info_list.append('drop_na_rows')
+        logging.info(f"Shape of dataframe after NormalizeDataset is {df.shape} : {'.'.join(info_list)}")
         return df
 class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
     def __init__(self, column_pattern=[],columns=[],create_new_col = True,last_ticks=10):
@@ -938,7 +948,7 @@ class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
     def transform(self, df):
         logging.info('*'*100)    
         for breach_type in self.breach_type:
-            logging.info(f"PriceLastTickBreachCount : {breach_type}")
+            logging.info(f"PriceLastTickBreachCount : {breach_type} : {self.last_ticks}")
             if breach_type == 'morethan':
                 tmpdf = df[self.columns].rolling(self.last_ticks, min_periods=1).apply(lambda x: sum(x[-1] > np.array(x[:-1]))).fillna(0)
             elif breach_type == 'lessthan':
@@ -993,7 +1003,7 @@ class RollingValues(BaseEstimator, TransformerMixin):
         col_names = [f"{shftcol}_{'_'.join(self.last_ticks)}_{'_'.join(self.aggs)}_rolling_values" for shftcol in self.columns]
         tmpdf.columns = col_names
         df = pd.merge(df, tmpdf, left_index=True, right_index=True,how='left')
-        if self.self.verbose:
+        if self.verbose:
             logging.info(f"Shape of dataframe after RollingValues is {df.shape}")
         return df
 class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
@@ -1011,7 +1021,7 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
         #df = convert_todate_deduplicate(df)
         for r1,r2 in self.hour_range:
             for rt in self.range_type:
-                logging.info(f"PriceDayRangeHourWise : {self.first_col} : {self.second_col } : {self.hour_range} : {self.range_type}")
+                logging.info(f"PriceDayRangeHourWise : {self.first_col} : {self.second_col} : {r1} : {r2} : {rt}")
                 if rt == 'price_range':
                     #logging.info(df[self.first_col])
                     s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max() - df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).min()
@@ -1029,9 +1039,10 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
             s1 = s1.sort_index()
             c = [int(i) for i in r2.split(':')]
             s1.index = s1.index + pd.DateOffset(minutes=c[0]*60 + c[1])
-            s1 = pd.DataFrame(s1,columns=[f"range_{r2.replace(':','')}"])
+            col_name = f"range_{r2.replace(':','')}"
+            s1.name = col_name
             df=pd.merge(df,s1, how='outer', left_index=True, right_index=True)
-            df[f"range_{r2.replace(':','')}"] = df[f"range_{r2.replace(':','')}"].fillna(method='ffill')
+            df[col_name] = df[col_name].fillna(method='ffill')
         logging.info(f"Shape of dataframe after PriceDayRangeHourWise is {df.shape}")
         return df
 class PriceVelocityv2(BaseEstimator, TransformerMixin):
