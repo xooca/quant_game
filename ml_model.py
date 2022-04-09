@@ -77,8 +77,9 @@ def run_pipeline(pipe_list,df,pipeinfo_loc,data_loc,load_previous = True):
         with open(pipeinfo_loc, 'wb') as handle:
             pickle.dump(pipe_list_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
         logging.info(f"Pipeline {i} completed. Shape of the data is {df.shape}")
+    return df
 
 pipe_list =[pipe1,pipe2,pipe3,pipe4,pipe5]
 pipeinfo_loc = r"E:\\\data\\trading\\pipe.pkl"
-data_loc = r"E:\\\data\\trading\\base.csv"
-run_pipeline(pipe_list,base_df,pipeinfo_loc,data_loc,load_previous=False)
+data_loc = r"E:\\\data\\trading\\base1.csv"
+df = run_pipeline(pipe_list,base_df,pipeinfo_loc,data_loc,load_previous=False)
