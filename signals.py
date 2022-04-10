@@ -1147,7 +1147,7 @@ def add_all_ta_features(
             vectorized=vectorized,
             volume_ta = True
         )
-    if others_ta = True,
+    if others_ta:
         df = add_others_ta(
             df=df, close=close, fillna=fillna, colprefix=colprefix
         )

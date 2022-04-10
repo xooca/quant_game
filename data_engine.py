@@ -1,5 +1,5 @@
 from re import A
-from aiosignal import Signal
+#from signal import Signal
 from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 import numpy as np
@@ -11,7 +11,7 @@ import pickle
 from pathlib import Path
 from feature_engine.discretisation import EqualWidthDiscretiser
 from feature_engine.imputation import MeanMedianImputer,CategoricalImputer,ArbitraryNumberImputer,EndTailImputer,DropMissingData
-from signals import Signal,add_all_ta_features
+from signals import Signals,add_all_ta_features
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
@@ -151,7 +151,7 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         self.all_methods = []
-        a = dict(Signal.__dict__)
+        a = dict(Signals.__dict__)
         for a1,a2 in a.items():
             self.all_methods.append(a1)
         self.all_methods = [m1 for m1,m2 in a.items() if m1[:1]!='_']
@@ -160,7 +160,7 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
-        sig = Signal(df)
+        sig = Signals(df)
         self.methods_run = []
         self.methods_notrun = []
         for f in self.all_methods:
@@ -892,4 +892,3 @@ class PositiveNegativeTrends(BaseEstimator, TransformerMixin):
         if self.verbose:
             logging.info(f"Shape of dataframe after PositiveNegativeTrends is {df.shape}") 
         return df
-
