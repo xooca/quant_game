@@ -1,4 +1,5 @@
 from re import A
+from tabnanny import verbose
 #from signal import Signal
 from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
@@ -174,7 +175,7 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
         return sig.df
 
 class CreateTechnicalIndicatorUsingTA(BaseEstimator, TransformerMixin):
-    def __init__(self, open='open',high='high',low='low',close='close',volume='volume',fillna=False,colprefix='ta',volume_ta=True,volatility_ta=True,trend_ta=True,momentum_ta=True,others_ta=True):
+    def __init__(self, open='open',high='high',low='low',close='close',volume='volume',vectorized=True,fillna=False,colprefix='ta',volume_ta=True,volatility_ta=True,trend_ta=True,momentum_ta=True,others_ta=True,verbose=True):
         self.open=open
         self.high=high
         self.low=low
@@ -187,6 +188,8 @@ class CreateTechnicalIndicatorUsingTA(BaseEstimator, TransformerMixin):
         self.trend_ta=trend_ta
         self.momentum_ta=momentum_ta
         self.others_ta=others_ta
+        self.verbose = verbose
+        self.vectorized = vectorized
         
     def fit(self, df, y=None):
         return self     # Nothing to do in fit in this scenario
@@ -829,10 +832,11 @@ class WeightedExponentialAverage(BaseEstimator, TransformerMixin):
         return df
 
 class PercentileTransform(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,window=200,min_periods=20):
+    def __init__(self, columns,window=200,min_periods=20,verbose=True):
         self.columns = columns
         self.window = window
         self.min_periods = min_periods
+        self.verbose = verbose
         
     def fit(self, df, y=None):
         return self     # Nothing to do in fit in this scenario
@@ -849,11 +853,12 @@ class PercentileTransform(BaseEstimator, TransformerMixin):
         return df
 
 class BinningTransform(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,get_current_row_bin=True,n_bins=5):
+    def __init__(self, columns,get_current_row_bin=True,n_bins=5,verbose=True):
         self.columns = columns
         self.get_current_row_bin = get_current_row_bin
         self.n_bins = n_bins
-        
+        self.verbose = verbose
+
     def fit(self, df, y=None):
         return self     # Nothing to do in fit in this scenario
     
@@ -872,10 +877,11 @@ class BinningTransform(BaseEstimator, TransformerMixin):
         return df
 
 class PositiveNegativeTrends(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,window=200,min_periods=None):
+    def __init__(self, columns,window=200,min_periods=None,verbose=True):
         self.columns = columns
         self.window = window
         self.min_periods = min_periods
+        self.verbose = verbose
         
     def fit(self, df, y=None):
         return self     # Nothing to do in fit in this scenario

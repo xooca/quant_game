@@ -940,7 +940,7 @@ def add_momentum_ta(
     fillna: bool = False,
     colprefix: str = "",
     vectorized: bool = False,
-    volume_ta = True
+    volume_ta: bool = True
 ) -> pd.DataFrame:
     """Add trend technical analysis features to dataframe.
     Args:
@@ -1145,7 +1145,7 @@ def add_all_ta_features(
             fillna=fillna,
             colprefix=colprefix,
             vectorized=vectorized,
-            volume_ta = True
+            volume_ta = volume_ta
         )
     if others_ta:
         df = add_others_ta(
