@@ -543,12 +543,7 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
             s1.index = s1.index + pd.DateOffset(minutes=c[0]*60 + c[1])
             col_name = f"PDR_{self.first_col}_{self.second_col}_{rt}_{r1.replace(':','')}_{r2.replace(':','')}"
             s1.name = col_name
-            logging.info(col_name)
-            logging.info(df.columns.tolist())
-            logging.info(s1)
             df=pd.merge(df,s1, how='outer', left_index=True, right_index=True)
-            logging.info(df.columns.tolist())
-            logging.info(df)
             df[col_name] = df[col_name].fillna(method='ffill')
         logging.info(f"Shape of dataframe after PriceDayRangeHourWise is {df.shape}")
         return df
