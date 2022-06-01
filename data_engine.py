@@ -1,4 +1,5 @@
 from re import A
+from statistics import mean
 from tabnanny import verbose
 #from signal import Signal
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -107,8 +108,8 @@ class LabelCreator(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self    # Nothing to do in fit in this scenario
     
-    def label_generator(self,val):
-        if val <= 10 and val>=10:
+    def label_generator_v2(self,val):
+        if val <= 10 and val>=-10:
             return '-10to10'
         elif val > 10 and val <= 20:
             return '10to20'
@@ -124,16 +125,36 @@ class LabelCreator(BaseEstimator, TransformerMixin):
             return 'above100'
         elif val < -10 and val >= -20:
             return '-10to-20'
-        elif val < -20 and val >= 40:
+        elif val < -20 and val >= -40:
             return '-20to-40'
-        elif val < -40 and val >= 60:
+        elif val < -40 and val >= -60:
             return '-40to-60'
-        elif val < -60 and val >= 80:
+        elif val < -60 and val >= -80:
             return '-60to-80'
-        elif val < -80 and val >= 100:
+        elif val < -80 and val >= -100:
             return '-80to-100'
-        elif val < 100:
+        elif val < -100:
             return 'below100'
+        else:
+            return 'unknown'
+
+    def label_generator(self,val):
+        if val <= 50 and val>=0:
+            return '-0to50'
+        elif val > 50 and val <= 100:
+            return '50to100'
+        elif val > 100 and val <= 200:
+            return '100to200'
+        elif val > 200:
+            return 'above200'
+        elif val > -50 and val <= 0:
+            return '0to-50'
+        elif val > -100 and val <= -50:
+            return '-50to-100'
+        elif val > -200 and val <= -100:
+            return '80to100'
+        elif val < -200:
+            return 'below200'
         else:
             return 'unknown'
 
@@ -741,20 +762,28 @@ class FilterData(BaseEstimator, TransformerMixin):
         return df
 
 class Zscoring(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,verbose=False):
+    def __init__(self, columns,window = 100,verbose=False):
         self.columns = columns
         self.verbose = verbose
+        self.window = window
         
     def fit(self, df, y=None):
         return self     # Nothing to do in fit in this scenario
     
+    def zscore(self,x, window):
+        r = x.rolling(window=window)
+        m = r.mean().shift(1)
+        s = r.std(ddof=0).shift(1)
+        z = (x-m)/s
+        return z
+
     def transform(self, df):
         logging.info('*'*100)
         if self.verbose:
             logging.info(f"Shape of dataframe before Zscoring is {df.shape}") 
-        zscore_fxn = lambda x: (x - x.rolling(window=200, min_periods=20).mean())/ x.rolling(window=200, min_periods=20).std()
+        #zscore_fxn = lambda x: (x - x.rolling(window=200, min_periods=20).mean())/ x.rolling(window=200, min_periods=20).std()
         for col in self.columns:
-            df[f'Zscore_{col}'] =df[col].apply(zscore_fxn)
+            df[f'Zscore_{col}_{self.window}'] =self.zscore(df[col],self.window)
         if self.verbose:
             logging.info(f"Shape of dataframe after Zscoring is {df.shape}") 
         return df
@@ -799,7 +828,7 @@ class PercentageChange(BaseEstimator, TransformerMixin):
         return df
 
 class WeightedExponentialAverage(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,com=None, span=44, halflife=None, alpha=None, min_periods=0, adjust=True, ignore_na=False, axis=0, times=None, method='single',verbose=False):
+    def __init__(self, columns,com=None, span=44, halflife=None, alpha=None, min_periods=0, adjust=True, ignore_na=False, axis=0, times=None, verbose=False):
         self.columns = columns
         self.com = com
         self.span = span
@@ -810,7 +839,7 @@ class WeightedExponentialAverage(BaseEstimator, TransformerMixin):
         self.ignore_na = ignore_na
         self.axis = axis
         self.times = times
-        self.method = method
+        #self.method = method
         self.verbose = verbose
         
     def fit(self, df, y=None):
@@ -821,16 +850,17 @@ class WeightedExponentialAverage(BaseEstimator, TransformerMixin):
         if self.verbose:
             logging.info(f"Shape of dataframe before WeightedExponentialAverage is {df.shape}")
         for col in self.columns:
-            df[f'WEA_{col}_{self.span}_{self.method}'] =df[col].ewm(com=self.com, span=self.span, halflife=self.halflife, alpha=self.alpha, min_periods=self.min_periods, adjust=self.adjust, ignore_na=self.ignore_na, axis=self.axis, times=self.times, method=self.method).mean()
+            df[f'WEA_{col}_{self.span}'] =df[col].ewm(com=self.com, span=self.span, halflife=self.halflife, alpha=self.alpha, min_periods=self.min_periods, adjust=self.adjust, ignore_na=self.ignore_na, axis=self.axis, times=self.times).mean()
         if self.verbose:
             logging.info(f"Shape of dataframe after WeightedExponentialAverage is {df.shape}") 
         return df
 
 class PercentileTransform(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,window=200,min_periods=20,verbose=True):
+    def __init__(self, columns,window=200,min_periods=20,quantile=0.75,verbose=True):
         self.columns = columns
         self.window = window
         self.min_periods = min_periods
+        self.quantile = quantile
         self.verbose = verbose
         
     def fit(self, df, y=None):
@@ -840,19 +870,46 @@ class PercentileTransform(BaseEstimator, TransformerMixin):
         logging.info('*'*100)
         if self.verbose:
             logging.info(f"Shape of dataframe before PercentileTransform is {df.shape}")
-        rollrank_fxn = lambda x: x.rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).rank(pct=True)[0])
+        #rollrank_fxn = lambda x: x.rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).quantile(0.75))
         for col in self.columns:
-            df[f'PCTL_{col}_{self.window}_{self.min_periods}'] =df[col].apply(rollrank_fxn)
+            df[f'PCTL_{col}_{self.window}_{self.min_periods}'] =df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).quantile(self.quantile))
         if self.verbose:
             logging.info(f"Shape of dataframe after PercentileTransform is {df.shape}") 
         return df
 
+class RollingRank(BaseEstimator, TransformerMixin):
+    def __init__(self, columns,window=200,min_periods=None,verbose=True):
+        self.columns = columns
+        self.window = window
+        self.min_periods = min_periods
+        self.verbose = verbose
+        
+    def fit(self, df, y=None):
+        return self     # Nothing to do in fit in this scenario
+    
+    def rank(self,s):
+        #s = pd.Series(array)
+        return s.rank(ascending=False)[len(s)-1]
+
+    def transform(self, df):
+        logging.info('*'*100)
+        if self.verbose:
+            logging.info(f"Shape of dataframe before RollingRank is {df.shape}")
+        for col in self.columns:
+            df[f'RRNK_{col}_{self.window}_{self.min_periods}'] = df[col].rolling(window=self.window,min_periods=self.min_periods).apply(self.rank)
+            #pd.rolling_apply(df[col], window = self.window,min_periods=self.min_periods,func= self.rank)
+        if self.verbose:
+            logging.info(f"Shape of dataframe after RollingRank is {df.shape}") 
+        return df
+
 class BinningTransform(BaseEstimator, TransformerMixin):
-    def __init__(self, columns,get_current_row_bin=True,n_bins=5,verbose=True):
+    def __init__(self, columns,window,min_period,get_current_row_bin=True,n_bins=5,verbose=True):
         self.columns = columns
         self.get_current_row_bin = get_current_row_bin
         self.n_bins = n_bins
         self.verbose = verbose
+        self.window = window
+        self.min_period = min_period
 
     def fit(self, df, y=None):
         return self     # Nothing to do in fit in this scenario
@@ -866,7 +923,7 @@ class BinningTransform(BaseEstimator, TransformerMixin):
         else:
             bin_roll_fxn = lambda x: pd.qcut(np.array(x),labels=False,q=self.n_bins,duplicates='drop')[0]
         for col in self.columns:
-            df[f'BINT_{col}_{self.window}_{self.min_periods}'] =df[col].apply(bin_roll_fxn)
+            df[f'BINT_{col}_{self.window}_{self.min_period}_{self.n_bins}'] =df[col].rolling(window=self.window,min_periods=self.min_period).apply(bin_roll_fxn)
         if self.verbose:
             logging.info(f"Shape of dataframe after BinningTransform is {df.shape}") 
         return df
@@ -880,16 +937,36 @@ class PositiveNegativeTrends(BaseEstimator, TransformerMixin):
         
     def fit(self, df, y=None):
         return self     # Nothing to do in fit in this scenario
-    
+
     def transform(self, df):
         logging.info('*'*100)
         if self.verbose:
             logging.info(f"Shape of dataframe before PositiveNegativeTrends is {df.shape}")
-        trending = lambda x: x.rolling(self.window, min_periods=self.min_periods).sum()
         for col in self.columns:
-            df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change()
-            df[f'PNT_{col}_{self.window}_{self.min_periods}'] =df[f'PNT_{col}_{self.window}_{self.min_periods}'].apply(np.sign)
-            df[f'PNT_{col}_{self.window}_{self.min_periods}'] =df[f'PNT_{col}_{self.window}_{self.min_periods}'].apply(trending)
+            df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
+        if self.verbose:
+            logging.info(f"Shape of dataframe after PositiveNegativeTrends is {df.shape}") 
+        return df
+
+class Rolling_Stats(BaseEstimator, TransformerMixin):
+    def __init__(self, columns,window=200,min_periods=None,verbose=True):
+        self.columns = columns
+        self.window = window
+        self.min_periods = min_periods
+        self.verbose = verbose
+        
+    def fit(self, df, y=None):
+        return self     # Nothing to do in fit in this scenario
+
+    def transform(self, df):
+        logging.info('*'*100)
+        if self.verbose:
+            logging.info(f"Shape of dataframe before PositiveNegativeTrends is {df.shape}")
+        for col in self.columns:
+            df[f'RR_{col}_{self.window}_{self.min_periods}_DIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-np.array(x)[0])
+            df[f'RR_{col}_{self.window}_{self.min_periods}_MAXDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-max(np.array(x)))
+            df[f'RR_{col}_{self.window}_{self.min_periods}_MINDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-min(np.array(x)))
+            df[f'RR_{col}_{self.window}_{self.min_periods}_MEANDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-mean(np.array(x)))
         if self.verbose:
             logging.info(f"Shape of dataframe after PositiveNegativeTrends is {df.shape}") 
         return df
