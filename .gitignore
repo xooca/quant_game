@@ -28,7 +28,6 @@ data_files/02-06-2022/datapipeline1.csv
 data_files/02-06-2022/pipe.pkl
 data_files/banknifty/already_loaded_files.pickle
 data_files/banknifty/banknifty.csv
-data/pipeline_stage1_v1.py
 model/30min_config
 model/et_model_15.pkl
 model/et_model.pkl
