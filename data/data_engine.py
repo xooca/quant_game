@@ -790,8 +790,13 @@ class Zscoring(BaseEstimator, TransformerMixin):
         if self.verbose:
             logging.info(f"Shape of dataframe before Zscoring is {df.shape}") 
         #zscore_fxn = lambda x: (x - x.rolling(window=200, min_periods=20).mean())/ x.rolling(window=200, min_periods=20).std()
+        #for col in self.columns:
+        #    df[f'Zscore_{col}_{self.window}'] =self.zscore(df[col],self.window)
+        merge_dict = {}
         for col in self.columns:
-            df[f'Zscore_{col}_{self.window}'] =self.zscore(df[col],self.window)
+            merge_dict.update({f'Zscore_{col}_{self.window}':self.zscore(df[col],self.window)})
+            logging.info(f"Zscore_{col}_{self.window} completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after Zscoring is {df.shape}") 
         return df
@@ -810,6 +815,11 @@ class LogTransform(BaseEstimator, TransformerMixin):
             logging.info(f"Shape of dataframe before LogTransform is {df.shape}") 
         for col in self.columns:
             df[f'Log_{col}'] =df[col].apply(np.log)
+        merge_dict = {}
+        for col in self.columns:
+            merge_dict.update({f'Log_{col}':df[col].apply(np.log)})
+            logging.info(f"Log_{col} completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after LogTransform is {df.shape}") 
         return df
@@ -830,8 +840,12 @@ class PercentageChange(BaseEstimator, TransformerMixin):
         logging.info('*'*100)
         if self.verbose:
             logging.info(f"Shape of dataframe before PercentageChange is {df.shape}")
+        merge_dict = {}
         for col in self.columns:
-            df[f'PerChg_{col}_{self.periods}_{self.freq}'] =df[col].pct_change(periods=self.periods,fill_method=self.fill_method,limit = self.limit,freq=self.freq)
+            merge_dict.update({f'PerChg_{col}_{self.periods}_{self.freq}':df[col].pct_change(periods=self.periods,fill_method=self.fill_method,limit = self.limit,freq=self.freq)})
+            #df[f'PerChg_{col}_{self.periods}_{self.freq}'] =df[col].pct_change(periods=self.periods,fill_method=self.fill_method,limit = self.limit,freq=self.freq)
+            logging.info(f"PerChg_{col}_{self.periods}_{self.freq} completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after PercentageChange is {df.shape}") 
         return df
@@ -858,8 +872,11 @@ class WeightedExponentialAverage(BaseEstimator, TransformerMixin):
         logging.info('*'*100)
         if self.verbose:
             logging.info(f"Shape of dataframe before WeightedExponentialAverage is {df.shape}")
+        merge_dict = {}
         for col in self.columns:
-            df[f'WEA_{col}_{self.span}'] =df[col].ewm(com=self.com, span=self.span, halflife=self.halflife, alpha=self.alpha, min_periods=self.min_periods, adjust=self.adjust, ignore_na=self.ignore_na, axis=self.axis, times=self.times).mean()
+            merge_dict.update({f'WEA_{col}_{self.span}':df[col].ewm(com=self.com, span=self.span, halflife=self.halflife, alpha=self.alpha, min_periods=self.min_periods, adjust=self.adjust, ignore_na=self.ignore_na, axis=self.axis, times=self.times).mean()})
+            logging.info(f"WEA_{col}_{self.span} completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after WeightedExponentialAverage is {df.shape}") 
         return df
@@ -880,8 +897,13 @@ class PercentileTransform(BaseEstimator, TransformerMixin):
         if self.verbose:
             logging.info(f"Shape of dataframe before PercentileTransform is {df.shape}")
         #rollrank_fxn = lambda x: x.rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).quantile(0.75))
+        #for col in self.columns:
+        #    df[f'PCTL_{col}_{self.window}_{self.min_periods}'] =df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).quantile(self.quantile))
+        merge_dict = {}
         for col in self.columns:
-            df[f'PCTL_{col}_{self.window}_{self.min_periods}'] =df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).quantile(self.quantile))
+            merge_dict.update({f'PCTL_{col}_{self.window}_{self.min_periods}':df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).quantile(self.quantile))})
+            logging.info(f"PCTL_{col}_{self.window}_{self.min_periods} completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after PercentileTransform is {df.shape}") 
         return df
@@ -904,9 +926,14 @@ class RollingRank(BaseEstimator, TransformerMixin):
         logging.info('*'*100)
         if self.verbose:
             logging.info(f"Shape of dataframe before RollingRank is {df.shape}")
-        for col in self.columns:
-            df[f'RRNK_{col}_{self.window}_{self.min_periods}'] = df[col].rolling(window=self.window,min_periods=self.min_periods).apply(self.rank)
+        #for col in self.columns:
+        #    df[f'RRNK_{col}_{self.window}_{self.min_periods}'] = df[col].rolling(window=self.window,min_periods=self.min_periods).apply(self.rank)
             #pd.rolling_apply(df[col], window = self.window,min_periods=self.min_periods,func= self.rank)
+        merge_dict = {}
+        for col in self.columns:
+            merge_dict.update({f'RRNK_{col}_{self.window}_{self.min_periods}':df[col].rolling(window=self.window,min_periods=self.min_periods).apply(self.rank)})
+            logging.info(f"RRNK_{col}_{self.window}_{self.min_periods} completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after RollingRank is {df.shape}") 
         return df
@@ -931,8 +958,13 @@ class BinningTransform(BaseEstimator, TransformerMixin):
             bin_roll_fxn = lambda x: pd.qcut(np.array(x),labels=False,q=self.n_bins,duplicates='drop')[-1]
         else:
             bin_roll_fxn = lambda x: pd.qcut(np.array(x),labels=False,q=self.n_bins,duplicates='drop')[0]
+        #for col in self.columns:
+        #    df[f'BINT_{col}_{self.window}_{self.min_period}_{self.n_bins}'] =df[col].rolling(window=self.window,min_periods=self.min_period).apply(bin_roll_fxn)
+        merge_dict = {}
         for col in self.columns:
-            df[f'BINT_{col}_{self.window}_{self.min_period}_{self.n_bins}'] =df[col].rolling(window=self.window,min_periods=self.min_period).apply(bin_roll_fxn)
+            merge_dict.update({f'BINT_{col}_{self.window}_{self.min_period}_{self.n_bins}':df[col].rolling(window=self.window,min_periods=self.min_period).apply(bin_roll_fxn)})
+            logging.info(f"BINT_{col}_{self.window}_{self.min_period}_{self.n_bins} completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after BinningTransform is {df.shape}") 
         return df
@@ -953,6 +985,11 @@ class PositiveNegativeTrends(BaseEstimator, TransformerMixin):
             logging.info(f"Shape of dataframe before PositiveNegativeTrends is {df.shape}")
         for col in self.columns:
             df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
+        merge_dict = {}
+        for col in self.columns:
+            merge_dict.update({f'PNT_{col}_{self.window}_{self.min_periods}_DIFF':df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)})
+            logging.info(f"PNT_{col}_{self.window}_{self.min_periods}_DIFF completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after PositiveNegativeTrends is {df.shape}") 
         return df
@@ -971,11 +1008,17 @@ class Rolling_Stats(BaseEstimator, TransformerMixin):
         logging.info('*'*100)
         if self.verbose:
             logging.info(f"Shape of dataframe before Rolling_Stats is {df.shape}")
+        merge_dict = {}
         for col in self.columns:
-            df[f'RR_{col}_{self.window}_{self.min_periods}_DIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-np.array(x)[0])
-            df[f'RR_{col}_{self.window}_{self.min_periods}_MAXDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-max(np.array(x)))
-            df[f'RR_{col}_{self.window}_{self.min_periods}_MINDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-min(np.array(x)))
-            df[f'RR_{col}_{self.window}_{self.min_periods}_MEANDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-mean(np.array(x)))
+            merge_dict.update({f'RR_{col}_{self.window}_{self.min_periods}_DIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-np.array(x)[0])})
+            logging.info(f"RR_{col}_{self.window}_{self.min_periods}_DIFF completed")
+            merge_dict.update({f'RR_{col}_{self.window}_{self.min_periods}_MAXDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-max(np.array(x)))})
+            logging.info(f"RR_{col}_{self.window}_{self.min_periods}_MAXDIFF completed")
+            merge_dict.update({f'RR_{col}_{self.window}_{self.min_periods}_MINDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-min(np.array(x)))})
+            logging.info(f"RR_{col}_{self.window}_{self.min_periods}_MINDIFF completed")
+            merge_dict.update({f'RR_{col}_{self.window}_{self.min_periods}_MEANDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-mean(np.array(x)))})
+            logging.info(f"RR_{col}_{self.window}_{self.min_periods}_MEANDIFF completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after Rolling_Stats is {df.shape}") 
         return df
@@ -1011,11 +1054,17 @@ class Rolling_Stats_withLookBack(BaseEstimator, TransformerMixin):
 
         if self.verbose:
             logging.info(f"Shape of dataframe before Rolling_Stats_withLookBack is {df.shape}")
+        merge_dict = {}
         for col in self.columns:
-            df[f'RRLB_{col}_{self.window}_{self.min_periods}_DIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_diff)
-            df[f'RRLB_{col}_{self.window}_{self.min_periods}_MAXDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_max)
-            df[f'RRLB_{col}_{self.window}_{self.min_periods}_MINDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_min)
-            df[f'RRLB_{col}_{self.window}_{self.min_periods}_MEANDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_mean)
+            merge_dict.update({f'RRLB_{col}_{self.window}_{self.min_periods}_DIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_diff)})
+            logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_DIFF completed")
+            merge_dict.update({f'RRLB_{col}_{self.window}_{self.min_periods}_MAXDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_max)})
+            logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_MAXDIFF completed")
+            merge_dict.update({f'RRLB_{col}_{self.window}_{self.min_periods}_MINDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_min)})
+            logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_MINDIFF completed")
+            merge_dict.update({f'RRLB_{col}_{self.window}_{self.min_periods}_MEANDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_mean)})
+            logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_MEANDIFF completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after Rolling_Stats_withLookBack is {df.shape}") 
         return df
@@ -1052,11 +1101,17 @@ class Rolling_Stats_withLookBack_Compare(BaseEstimator, TransformerMixin):
 
         if self.verbose:
             logging.info(f"Shape of dataframe before Rolling_Stats_withLookBack_Compare is {df.shape}")
+        merge_dict = {}
         for col in self.columns:
-            df[f'RRLBC_{col}_{self.window}_{self.min_periods}_DIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_diff)
-            df[f'RRLBC_{col}_{self.window}_{self.min_periods}_MAXDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_max)
-            df[f'RRLBC_{col}_{self.window}_{self.min_periods}_MINDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_min)
-            df[f'RRLBC_{col}_{self.window}_{self.min_periods}_MEANDIFF'] = df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_mean)
+            merge_dict.update({f'RRLBC_{col}_{self.window}_{self.min_periods}_DIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_diff)})
+            logging.info(f"RRLBC_{col}_{self.window}_{self.min_periods}_DIFF completed")
+            merge_dict.update({f'RRLBC_{col}_{self.window}_{self.min_periods}_MAXDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_max)})
+            logging.info(f"RRLBC_{col}_{self.window}_{self.min_periods}_MAXDIFF completed")
+            merge_dict.update({f'RRLBC_{col}_{self.window}_{self.min_periods}_MINDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_min)})
+            logging.info(f"RRLBC_{col}_{self.window}_{self.min_periods}_MINDIFF completed")
+            merge_dict.update({f'RRLBC_{col}_{self.window}_{self.min_periods}_MEANDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_mean)})
+            logging.info(f"RRLBC_{col}_{self.window}_{self.min_periods}_MEANDIFF completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after Rolling_Stats_withLookBack_Compare is {df.shape}") 
         return df
