@@ -977,8 +977,6 @@ class BinningTransform(BaseEstimator, TransformerMixin):
             bin_roll_fxn = lambda x: pd.qcut(np.array(x),labels=False,q=self.n_bins,duplicates='drop')[-1]
         else:
             bin_roll_fxn = lambda x: pd.qcut(np.array(x),labels=False,q=self.n_bins,duplicates='drop')[0]
-        #for col in self.columns:
-        #    df[f'BINT_{col}_{self.window}_{self.min_period}_{self.n_bins}'] =df[col].rolling(window=self.window,min_periods=self.min_period).apply(bin_roll_fxn)
         merge_dict = {}
         for col in self.columns:
             merge_dict.update({f'BINT_{col}_{self.window}_{self.min_period}_{self.n_bins}':df[col].rolling(window=self.window,min_periods=self.min_period).apply(bin_roll_fxn)})
@@ -1078,7 +1076,11 @@ class Rolling_Stats_withLookBack(BaseEstimator, TransformerMixin):
 
         def lookback_max_max(vals):
             offset = len(vals)//self.lookback_divider
-            return max(np.array(vals))-max(np.array(vals)[0:offset+1]).mean()
+            return max(np.array(vals))-np.array(vals)[0:offset+1].mean()
+
+        def lookback_min_min(vals):
+            offset = len(vals)//self.lookback_divider
+            return min(np.array(vals))-np.array(vals)[0:offset+1].mean()
 
         if self.verbose:
             logging.info(f"Shape of dataframe before Rolling_Stats_withLookBack is {df.shape}")
@@ -1094,6 +1096,8 @@ class Rolling_Stats_withLookBack(BaseEstimator, TransformerMixin):
             logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_MEANDIFF completed")
             merge_dict.update({f'RRLB_{col}_{self.window}_{self.min_periods}_MAXMAX':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_max_max)})
             logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_MAXMAX completed")
+            merge_dict.update({f'RRLB_{col}_{self.window}_{self.min_periods}_MINMIN':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_min_min)})
+            logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_MINMIN completed")
         df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after Rolling_Stats_withLookBack is {df.shape}") 
@@ -1178,8 +1182,6 @@ class PreviousDaysRange(BaseEstimator, TransformerMixin):
         df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before PreviousDaysRange is {df.shape}")
-        #for col in self.columns:
-        #    df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
         merge_dict = {}
         for col in self.columns:
             merge_dict.update({f'PVDR_{col}_{self.freq}':df[col].resample(self.resample).ffill().groupby(pd.Grouper(freq=self.freq)).apply(lambda x: np.array(x)[-1]-np.array(x)[0]).shift(self.shift)})
@@ -1203,13 +1205,11 @@ class GapOpen(BaseEstimator, TransformerMixin):
         df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before GapOpen is {df.shape}")
-        #for col in self.columns:
-        #    df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
         merge_dict = {}
         for col in self.columns:
             tmp = df[col].resample('d').bfill().groupby(pd.Grouper(freq='d')).apply(lambda x:x[0]).subtract( df[col].resample('d').ffill().groupby(pd.Grouper(freq='d')).apply(lambda x:x[-1]).fillna(0))
-            merge_dict.update({'GBD_{col}':tmp[1:]})
-            logging.info(f"GBD_{col} completed")
+            merge_dict.update({'GO_{col}':tmp[1:]})
+            logging.info(f"GO_{col} completed")
         df = pd.merge_asof(df, pd.concat(merge_dict,axis=1), left_index=True, right_index=True)
         if self.verbose:
             logging.info(f"Shape of dataframe after GapOpen is {df.shape}") 
