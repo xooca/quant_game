@@ -366,6 +366,7 @@ class PriceLastTickBreachCountv1(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         #df.index = pd.to_datetime(df.index)
         #df = df.sort_index()
         #df = df[~df.index.duplicated(keep='first')]         
@@ -421,7 +422,8 @@ class ValueLastTickBreachCount(BaseEstimator, TransformerMixin):
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):   
-        logging.info('*'*100)     
+        logging.info('*'*100)
+        df = df.sort_index()    
         for col in self.columns:
             for breach_type in self.breach_type:
                 
@@ -472,7 +474,8 @@ class PriceLastTickBreachCount(BaseEstimator, TransformerMixin):
         return self    # Nothing to do in fit in this scenario
 
     def transform(self, df):
-        logging.info('*'*100)    
+        logging.info('*'*100)
+        df = df.sort_index()   
         for breach_type in self.breach_type:
             logging.info(f"PriceLastTickBreachCount : {breach_type} : {self.last_ticks}")
             if breach_type == 'morethan':
@@ -520,6 +523,7 @@ class RollingValues(BaseEstimator, TransformerMixin):
 
     def transform(self, df):   
         logging.info('*'*100)
+        df = df.sort_index()
         eval_stmt = '' 
         for lt,oper,agg in zip(self.last_ticks,self.oper,self.aggs):
             #logging.info(lt,oper,agg)
@@ -546,6 +550,7 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
     def transform(self, df):
         logging.info('*'*100)
         #df = convert_todate_deduplicate(df)
+        df = df.sort_index()
         for r1,r2 in self.hour_range:
             for rt in self.range_type:
                 logging.info(f"PriceDayRangeHourWise : {self.first_col} : {self.second_col} : {r1} : {r2} : {rt}")
@@ -589,6 +594,7 @@ class PriceVelocityv2(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         for shftcol in self.shift_column:
             
             if self.freq is not None:
@@ -620,6 +626,7 @@ class PriceVelocity(BaseEstimator, TransformerMixin):
         self.shift_column_pattern = shift_column_pattern
         
     def fit(self, df, y=None):
+        
         if len(self.shift_column) == 0:
             self.shift_column = [m for m in df.columns.tolist() for mt in self.shift_column_pattern if mt in m]
             self.shift_column = list(set(self.shift_column))
@@ -627,6 +634,7 @@ class PriceVelocity(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.freq is not None:
             tmpdf = df[self.shift_column].subtract(df.shift(self.shift,freq=self.freq)[self.shift_column])
             col_names = [f'{shftcol}_{self.freq}_{self.shift}_price_velocity' for shftcol in self.shift_column]
@@ -656,6 +664,7 @@ class PriceVelocityv1(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         for shftcol in self.shift_column:
             logging.info(f"PriceVelocity : {shftcol}")
             if self.freq is not None:
@@ -688,6 +697,7 @@ class PricePerIncrementv1(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         for shftcol in self.shift_column:
             
             if self.freq is not None:
@@ -728,6 +738,7 @@ class PricePerIncrement(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.freq is not None:
             tmpdf = df[self.shift_column].subtract(df.shift(self.shift,freq=self.freq)[self.shift_column])
             
@@ -755,6 +766,7 @@ class FilterData(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before FilterData is {df.shape}") 
         if self.start_date is not None and self.end_date is None:
@@ -787,6 +799,7 @@ class Zscoring(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before Zscoring is {df.shape}") 
         #zscore_fxn = lambda x: (x - x.rolling(window=200, min_periods=20).mean())/ x.rolling(window=200, min_periods=20).std()
@@ -811,6 +824,7 @@ class LogTransform(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before LogTransform is {df.shape}") 
         for col in self.columns:
@@ -838,6 +852,7 @@ class PercentageChange(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before PercentageChange is {df.shape}")
         merge_dict = {}
@@ -870,6 +885,7 @@ class WeightedExponentialAverage(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before WeightedExponentialAverage is {df.shape}")
         merge_dict = {}
@@ -894,6 +910,7 @@ class PercentileTransform(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before PercentileTransform is {df.shape}")
         #rollrank_fxn = lambda x: x.rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).quantile(0.75))
@@ -924,6 +941,7 @@ class RollingRank(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before RollingRank is {df.shape}")
         #for col in self.columns:
@@ -952,6 +970,7 @@ class BinningTransform(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before BinningTransform is {df.shape}")
         if self.get_current_row_bin:
@@ -981,6 +1000,7 @@ class PositiveNegativeTrends(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before PositiveNegativeTrends is {df.shape}")
         #for col in self.columns:
@@ -1006,6 +1026,7 @@ class Rolling_Stats(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         if self.verbose:
             logging.info(f"Shape of dataframe before Rolling_Stats is {df.shape}")
         merge_dict = {}
@@ -1018,6 +1039,8 @@ class Rolling_Stats(BaseEstimator, TransformerMixin):
             logging.info(f"RR_{col}_{self.window}_{self.min_periods}_MINDIFF completed")
             merge_dict.update({f'RR_{col}_{self.window}_{self.min_periods}_MEANDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1]-mean(np.array(x)))})
             logging.info(f"RR_{col}_{self.window}_{self.min_periods}_MEANDIFF completed")
+            merge_dict.update({f'RR_{col}_{self.window}_{self.min_periods}_MAXMIN':df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: max(np.array(x))-min(np.array(x)))})
+            logging.info(f"RR_{col}_{self.window}_{self.min_periods}_MAXMIN completed")
         df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after Rolling_Stats is {df.shape}") 
@@ -1036,6 +1059,7 @@ class Rolling_Stats_withLookBack(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         def lookback_diff(vals):
             offset = len(vals)//self.lookback_divider
             return np.array(vals)[offset]-np.array(vals)[0]
@@ -1052,6 +1076,10 @@ class Rolling_Stats_withLookBack(BaseEstimator, TransformerMixin):
             offset = len(vals)//self.lookback_divider
             return np.array(vals)[offset]-np.array(vals)[0:offset+1].mean()
 
+        def lookback_max_max(vals):
+            offset = len(vals)//self.lookback_divider
+            return max(np.array(vals))-max(np.array(vals)[0:offset+1]).mean()
+
         if self.verbose:
             logging.info(f"Shape of dataframe before Rolling_Stats_withLookBack is {df.shape}")
         merge_dict = {}
@@ -1064,6 +1092,8 @@ class Rolling_Stats_withLookBack(BaseEstimator, TransformerMixin):
             logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_MINDIFF completed")
             merge_dict.update({f'RRLB_{col}_{self.window}_{self.min_periods}_MEANDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_mean)})
             logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_MEANDIFF completed")
+            merge_dict.update({f'RRLB_{col}_{self.window}_{self.min_periods}_MAXMAX':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_max_max)})
+            logging.info(f"RRLB_{col}_{self.window}_{self.min_periods}_MAXMAX completed")
         df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after Rolling_Stats_withLookBack is {df.shape}") 
@@ -1082,6 +1112,7 @@ class Rolling_Stats_withLookBack_Compare(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         logging.info('*'*100)
+        df = df.sort_index()
         def lookback_diff(vals):
             offset = len(vals)//self.lookback_divider
             res = (np.array(vals)[offset]-np.array(vals)[-1]) - (np.array(vals)[0]-np.array(vals)[offset])
@@ -1099,11 +1130,13 @@ class Rolling_Stats_withLookBack_Compare(BaseEstimator, TransformerMixin):
             offset = len(vals)//self.lookback_divider
             return np.array(vals)[offset+1:].mean()-np.array(vals)[0:offset+1].mean()
 
-        def lookback_mean(vals):
+        def lookback_max_min(vals):
             offset = len(vals)//self.lookback_divider
-            df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
-            
-            return np.array(vals)[offset+1:].mean()-np.array(vals)[0:offset+1].mean()
+            return max(np.array(vals)[offset+1:])-min(np.array(vals)[0:offset+1])
+
+        def lookback_min_max(vals):
+            offset = len(vals)//self.lookback_divider
+            return min(np.array(vals)[offset+1:])-max(np.array(vals)[0:offset+1])
 
         if self.verbose:
             logging.info(f"Shape of dataframe before Rolling_Stats_withLookBack_Compare is {df.shape}")
@@ -1117,7 +1150,68 @@ class Rolling_Stats_withLookBack_Compare(BaseEstimator, TransformerMixin):
             logging.info(f"RRLBC_{col}_{self.window}_{self.min_periods}_MINDIFF completed")
             merge_dict.update({f'RRLBC_{col}_{self.window}_{self.min_periods}_MEANDIFF':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_mean)})
             logging.info(f"RRLBC_{col}_{self.window}_{self.min_periods}_MEANDIFF completed")
+            merge_dict.update({f'RRLBC_{col}_{self.window}_{self.min_periods}_MAXMIN':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_max_min)})
+            logging.info(f"RRLBC_{col}_{self.window}_{self.min_periods}_MAXMIN completed")
+            merge_dict.update({f'RRLBC_{col}_{self.window}_{self.min_periods}_MINMAX':df[col].rolling(self.window, min_periods=self.min_periods).apply(lookback_min_max)})
+            logging.info(f"RRLBC_{col}_{self.window}_{self.min_periods}_MINMAX completed")
         df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             logging.info(f"Shape of dataframe after Rolling_Stats_withLookBack_Compare is {df.shape}") 
         return df
+
+class PreviousDaysRange(BaseEstimator, TransformerMixin):
+    def __init__(self, columns,freq='d',shift=1,resample='1min',verbose=True):
+        '''
+        freq should always be d or more than d. Any discontinuity in data would cause problem
+        '''
+        self.columns = columns
+        self.freq = freq
+        self.shift = shift
+        self.resample = resample
+        self.verbose = verbose
+        
+    def fit(self, df, y=None):
+        return self     # Nothing to do in fit in this scenario
+
+    def transform(self, df):
+        logging.info('*'*100)
+        df = df.sort_index()
+        if self.verbose:
+            logging.info(f"Shape of dataframe before PreviousDaysRange is {df.shape}")
+        #for col in self.columns:
+        #    df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
+        merge_dict = {}
+        for col in self.columns:
+            merge_dict.update({f'PVDR_{col}_{self.freq}':df[col].resample(self.resample).ffill().groupby(pd.Grouper(freq=self.freq)).apply(lambda x: np.array(x)[-1]-np.array(x)[0]).shift(self.shift)})
+            merge_dict.update({f'PVDR_{col}_{self.freq}_MAX_MIN':df[col].resample(self.resample).ffill().groupby(pd.Grouper(freq=self.freq)).apply(lambda x: max(np.array(x))-min(np.array(x))).shift(self.shift)})
+            logging.info(f"PVDR_{col}_{self.freq}_{self.shift} completed")
+        df = pd.merge_asof(df, pd.concat(merge_dict,axis=1), left_index=True, right_index=True)
+        if self.verbose:
+            logging.info(f"Shape of dataframe after PreviousDaysRange is {df.shape}") 
+        return df
+
+class GapOpen(BaseEstimator, TransformerMixin):
+    def __init__(self, columns,verbose=True):
+        self.columns = columns
+        self.verbose = verbose
+        
+    def fit(self, df, y=None):
+        return self     # Nothing to do in fit in this scenario
+
+    def transform(self, df):
+        logging.info('*'*100)
+        df = df.sort_index()
+        if self.verbose:
+            logging.info(f"Shape of dataframe before GapOpen is {df.shape}")
+        #for col in self.columns:
+        #    df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
+        merge_dict = {}
+        for col in self.columns:
+            tmp = df[col].resample('d').bfill().groupby(pd.Grouper(freq='d')).apply(lambda x:x[0]).subtract( df[col].resample('d').ffill().groupby(pd.Grouper(freq='d')).apply(lambda x:x[-1]).fillna(0))
+            merge_dict.update({'GBD_{col}':tmp[1:]})
+            logging.info(f"GBD_{col} completed")
+        df = pd.merge_asof(df, pd.concat(merge_dict,axis=1), left_index=True, right_index=True)
+        if self.verbose:
+            logging.info(f"Shape of dataframe after GapOpen is {df.shape}") 
+        return df
+
