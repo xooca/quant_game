@@ -41,3 +41,4 @@ model/xg_model.pkl
 model/15min_config
 __pycache__/data.cpython-37.pyc
 data/__pycache__/data_engine.cpython-37.pyc
+data_files/*

@@ -901,7 +901,7 @@ class PercentileTransform(BaseEstimator, TransformerMixin):
         #    df[f'PCTL_{col}_{self.window}_{self.min_periods}'] =df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).quantile(self.quantile))
         merge_dict = {}
         for col in self.columns:
-            merge_dict.update({f'PCTL_{col}_{self.window}_{self.min_periods}':df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: pd.Series(x).quantile(self.quantile))})
+            merge_dict.update({f'PCTL_{col}_{self.window}_{self.min_periods}':df[col].rolling(self.window, min_periods=self.min_periods).apply(lambda x: np.array(x)[-1] - np.quantile(np.array(x),q=self.quantile))})
             logging.info(f"PCTL_{col}_{self.window}_{self.min_periods} completed")
         df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
@@ -983,8 +983,8 @@ class PositiveNegativeTrends(BaseEstimator, TransformerMixin):
         logging.info('*'*100)
         if self.verbose:
             logging.info(f"Shape of dataframe before PositiveNegativeTrends is {df.shape}")
-        for col in self.columns:
-            df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
+        #for col in self.columns:
+        #    df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
         merge_dict = {}
         for col in self.columns:
             merge_dict.update({f'PNT_{col}_{self.window}_{self.min_periods}_DIFF':df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)})
@@ -1097,6 +1097,12 @@ class Rolling_Stats_withLookBack_Compare(BaseEstimator, TransformerMixin):
 
         def lookback_mean(vals):
             offset = len(vals)//self.lookback_divider
+            return np.array(vals)[offset+1:].mean()-np.array(vals)[0:offset+1].mean()
+
+        def lookback_mean(vals):
+            offset = len(vals)//self.lookback_divider
+            df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
+            
             return np.array(vals)[offset+1:].mean()-np.array(vals)[0:offset+1].mean()
 
         if self.verbose:
