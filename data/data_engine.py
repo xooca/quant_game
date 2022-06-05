@@ -1192,7 +1192,7 @@ class PreviousDaysRange(BaseEstimator, TransformerMixin):
             logging.info(f"Shape of dataframe after PreviousDaysRange is {df.shape}") 
         return df
 
-class GapOpen(BaseEstimator, TransformerMixin):
+class GapOpenMinuteChart(BaseEstimator, TransformerMixin):
     def __init__(self, columns,verbose=True):
         self.columns = columns
         self.verbose = verbose
@@ -1204,14 +1204,14 @@ class GapOpen(BaseEstimator, TransformerMixin):
         logging.info('*'*100)
         df = df.sort_index()
         if self.verbose:
-            logging.info(f"Shape of dataframe before GapOpen is {df.shape}")
+            logging.info(f"Shape of dataframe before GapOpenMinuteChart is {df.shape}")
         merge_dict = {}
         for col in self.columns:
             tmp = df[col].resample('d').bfill().groupby(pd.Grouper(freq='d')).apply(lambda x:x[0]).subtract( df[col].resample('d').ffill().groupby(pd.Grouper(freq='d')).apply(lambda x:x[-1]).fillna(0))
-            merge_dict.update({'GO_{col}':tmp[1:]})
-            logging.info(f"GO_{col} completed")
+            merge_dict.update({'GOMC_{col}':tmp[1:]})
+            logging.info(f"GOMC_{col} completed")
         df = pd.merge_asof(df, pd.concat(merge_dict,axis=1), left_index=True, right_index=True)
         if self.verbose:
-            logging.info(f"Shape of dataframe after GapOpen is {df.shape}") 
+            logging.info(f"Shape of dataframe after GapOpenMinuteChart is {df.shape}") 
         return df
 
