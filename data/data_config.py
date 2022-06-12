@@ -1,0 +1,9 @@
+read_start_date = '2011-01-01'
+read_end_date = None
+save_start_date = '2011-02-01'
+save_start_date = None
+ohlc_column = ['close','open','high','low']
+selected_columns = ['close','open','high','low']
+technical_indicator_col_pattern = ['momentum','volatile','transform','pattern','overlap']
+label_generator_col = 'close'
+ta_pipe2_exclude=["pvo","vwap","vwma","ad","adosc","aobv","cmf","efi","eom","kvo","mfi","nvi","obv","pvi","pvol","pvr","pvt"]

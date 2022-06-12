@@ -197,6 +197,25 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
         logging.info(f"Shape of dataframe after TechnicalIndicator is {df.shape}")
         return sig.df
 
+class CreateTechnicalIndicatorUsingPandasTA(BaseEstimator, TransformerMixin):
+    def __init__(self,exclude=["pvo","vwap","vwma","ad","adosc","aobv","cmf","efi","eom","kvo","mfi","nvi","obv","pvi","pvol","pvr","pvt"]
+,verbose=True):
+        self.df=df
+        self.exclude = exclude
+        self.verbose = verbose
+        
+    def fit(self, df, y=None):
+        return self     # Nothing to do in fit in this scenario
+    
+    def transform(self, df):
+        logging.info('*'*100)
+        if self.verbose:
+            logging.info(f"Shape of dataframe before CreateTechnicalIndicatorUsingPandasTA is {df.shape}")
+        df.ta.strategy(exclude=self.exclude,verbose=self.verbose,timed=True)
+        if self.verbose:
+            logging.info(f"Shape of dataframe after CreateTechnicalIndicatorUsingPandasTA is {df.shape}") 
+        return df
+
 class CreateTechnicalIndicatorUsingTA(BaseEstimator, TransformerMixin):
     def __init__(self, open='open',high='high',low='low',close='close',volume='volume',vectorized=True,fillna=False,colprefix='ta',volume_ta=True,volatility_ta=True,trend_ta=True,momentum_ta=True,others_ta=True,verbose=True):
         self.open=open
@@ -264,6 +283,7 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         logging.info('*'*100)
+        logging.info(f"Shape of dataframe before NormalizeDataset is {df.shape}")
         info_list = []
         df = convert_todate_deduplicate(df)
         if self.convert_to_floats:
