@@ -1,0 +1,13 @@
+pycaret:
+  evaluation:
+    eval_metric: auc
+  model:
+    model_save_path: 
+  optimization:
+    generic: 
+      time_limit: 111
+      num_trials: 4
+      search_strategy: auto
+    nnoption:
+      num_epochs: 23
+      learning_rate: 333

@@ -1,0 +1,7 @@
+autogluon:
+  evaluation:
+    eval_metric: accuracy
+  optimization:
+    generic: 
+      time_limit: 111
+      num_trials: 234

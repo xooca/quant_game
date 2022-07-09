@@ -1,0 +1,13 @@
+autogluon:
+  evaluation1:
+    eval_metric1: accuracy
+  model1:
+    model_save_path1: 
+  optimization1:
+    generic1: 
+      time_limit1: 120
+      num_trials1: 5
+      search_strategy1: auto
+    nnoption1:
+      num_epochs1: 10
+      learning_rate1: 871

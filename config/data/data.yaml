@@ -1,0 +1,15 @@
+common:
+  read_start_date: '2011-01-01'
+  read_end_date: None
+  save_start_date: '2011-02-01'
+  save_end_date: None
+  ohlc_column: ['close','open','high','low']
+  selected_columns: ['close','open','high','low']
+  technical_indicator_col_pattern: ['momentum','volatile','transform','pattern','overlap']
+  label_generator_col:  'close'
+  ta_pipe2_exclude: ["pvo","vwap","vwma","ad","adosc","aobv","cmf","efi","eom","kvo","mfi","nvi","obv","pvi","pvol","pvr","pvt"]
+pdrhw:
+  hour_range: [['09:00','10:30'],['10:30','11:30'],['11:30','12:30'],['12:30','01:30'],['02:30', '15:30']]
+  range_type: ['price_range','price_deviation_max_first_col','price_deviation_min_first_col','price_deviation_max_second_col','price_deviation_min_second_col']
+pltbc:
+  breach_type: ['morethan','max']

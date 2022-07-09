@@ -13,7 +13,7 @@ import pickle
 from pathlib import Path
 from feature_engine.discretisation import EqualWidthDiscretiser
 from feature_engine.imputation import MeanMedianImputer,CategoricalImputer,ArbitraryNumberImputer,EndTailImputer,DropMissingData
-from signals import Signals,add_all_ta_features
+from data.signals import Signals,add_all_ta_features
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
@@ -558,7 +558,7 @@ class RollingValues(BaseEstimator, TransformerMixin):
         return df
 
 class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
-    def __init__(self, first_col = 'high',second_col='low',hour_range = [('09:00', '10:30'),('10:30', '11:30')],range_type=['price_range','price_deviation_max_first_col']):
+    def __init__(self, first_col = 'high',second_col='low',hour_range = [['09:00', '10:30'],['10:30', '11:30']],range_type=['price_range','price_deviation_max_first_col']):
         self.hour_range = hour_range
         self.first_col = first_col
         self.second_col = second_col
