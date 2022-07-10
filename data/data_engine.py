@@ -200,7 +200,7 @@ class TechnicalIndicator(BaseEstimator, TransformerMixin):
 class CreateTechnicalIndicatorUsingPandasTA(BaseEstimator, TransformerMixin):
     def __init__(self,exclude=["pvo","vwap","vwma","ad","adosc","aobv","cmf","efi","eom","kvo","mfi","nvi","obv","pvi","pvol","pvr","pvt"]
 ,verbose=True):
-        self.df=df
+        import pandas_ta as ta
         self.exclude = exclude
         self.verbose = verbose
         
@@ -209,6 +209,7 @@ class CreateTechnicalIndicatorUsingPandasTA(BaseEstimator, TransformerMixin):
     
     def transform(self, df):
         logging.info('*'*100)
+        import pandas_ta as ta
         if self.verbose:
             logging.info(f"Shape of dataframe before CreateTechnicalIndicatorUsingPandasTA is {df.shape}")
         df.ta.strategy(exclude=self.exclude,verbose=self.verbose,timed=True)

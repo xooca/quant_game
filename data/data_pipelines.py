@@ -8,34 +8,9 @@ import numpy as np
 #import data.data_config as dc
 from hydra import initialize, initialize_config_module, initialize_config_dir, compose
 from omegaconf import OmegaConf
+import data.data_utils as du
 
-def run_pipeline(pipe_list,df,pipeinfo_loc,data_loc,load_previous = True):
-    pipe_list_save = [col for col in pipe_list]
-    if load_previous:
-        try:
-            with open(pipeinfo_loc, 'rb') as handle:
-                pipe_list = pickle.load(handle)
-            logging.info(f"Previous pipeline loaded from location {pipeinfo_loc}. Length of pipeline is {len(pipe_list)}")
-            df = pd.read_csv(data_loc,parse_dates=True,index_col='Unnamed: 0')
-            logging.info(f"Previous data loaded from location {data_loc}. Shape of the data is {df.shape}")
-        except Exception as e1:
-            logging.info(f"File {pipeinfo_loc} is not loaded because of error : {e1}")
-    for i, pipe in enumerate(pipe_list,1):
-        logging.info('#'*100)
-        logging.info(f"Pipeline {i} started. Shape of the data is {df.shape}")
-        logging.info(pipe)
-        df = pipe.fit_transform(df)
-        pipe_list_save.remove(pipe)
-        df.to_csv(data_loc)
-        with open(pipeinfo_loc, 'wb') as handle:
-            pickle.dump(pipe_list_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        logging.info(f"Pipeline {i} completed. Shape of the data is {df.shape}")
-    return df
-
-with initialize(version_base=None, config_path="./config"):
-    dc=compose(overrides= ["+data=data"])
-    print(dc)
-
+dc = du.initialize_config(overrides=["+data=data"],version_base=None, config_path="../config")
 OHLC_COLUMNS = list(dc.data.common.ohlc_column)
 TECHNICAL_IND_PATTERN = list(dc.data.common.technical_indicator_col_pattern)
 SELECTED_COLUMNS = list(dc.data.common.selected_columns)
@@ -62,14 +37,14 @@ technical_indicator_pipe1 = Pipeline([
 
 technical_indicator_pipe2 = Pipeline([
     ('tech_indicator2', de.CreateTechnicalIndicatorUsingPandasTA(exclude=TA_PIPE2_EXCLUDE,verbose=True)),
-    ('tech_indicator2_ND1', de.NormalizeDataset(column_pattern = OHLC_COLUMNS,fillna=True,fillna_method='bfill')),
-    ('tech_indicator2_ND2', de.NormalizeDataset(column_pattern = OHLC_COLUMNS,drop_na_rows=False,fillna=True,fillna_method='ffill')),
+   # ('tech_indicator2_ND1', de.NormalizeDataset(column_pattern = OHLC_COLUMNS,fillna=True,fillna_method='bfill')),
+   # ('tech_indicator2_ND2', de.NormalizeDataset(column_pattern = OHLC_COLUMNS,drop_na_rows=False,fillna=True,fillna_method='ffill')),
     ])
 
 technical_indicator_pipe3 = Pipeline([
     ('tech_indicator3', de.CreateTechnicalIndicatorUsingTA(volume_ta=False,verbose=True)),
-    ('tech_indicator3_ND1', de.NormalizeDataset(column_pattern = OHLC_COLUMNS,fillna=True,fillna_method='bfill')),
-    ('tech_indicator3_ND2', de.NormalizeDataset(column_pattern = OHLC_COLUMNS,drop_na_rows=False,fillna=True,fillna_method='ffill')),
+  #  ('tech_indicator3_ND1', de.NormalizeDataset(column_pattern = OHLC_COLUMNS,fillna=True,fillna_method='bfill')),
+  #  ('tech_indicator3_ND2', de.NormalizeDataset(column_pattern = OHLC_COLUMNS,drop_na_rows=False,fillna=True,fillna_method='ffill')),
     ])
 
 rolling_values_pipe = Pipeline([
@@ -158,7 +133,7 @@ price_range_pipe = Pipeline([
     ])
 
 label_creator_pipe = Pipeline([
-    ('labelgenerator_1', de.LabelCreator(freq='1min',shift=-15,shift_column=dc.label_generator_col)),
-    ('labelgenerator_2', de.LabelCreator(freq='1min',shift=-30,shift_column=dc.label_generator_col)),
-    ('labelgenerator_3', de.LabelCreator(freq='1min',shift=-60,shift_column=dc.label_generator_col)),
+    ('labelgenerator_1', de.LabelCreator(freq='1min',shift=-15,shift_column=dc.data.common.label_generator_col)),
+    ('labelgenerator_2', de.LabelCreator(freq='1min',shift=-30,shift_column=dc.data.common.label_generator_col)),
+    ('labelgenerator_3', de.LabelCreator(freq='1min',shift=-60,shift_column=dc.data.common.label_generator_col)),
     ])
