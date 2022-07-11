@@ -4,9 +4,12 @@ paths:
   pipeinfo: "${data.paths.data_files}${data.paths.data_create_date}/pipe.pkl"
   base_data_loc: "${data.paths.data_files}${data.paths.data_create_date}/"
   input_path: "/content/gdrive/MyDrive/Work/trading/data_files/banknifty/banknifty.csv"
+  train_save_path: "${data.paths.data_files}${data.paths.data_create_date}/train.csv"
+  test_save_path: "${data.paths.data_files}${data.paths.data_create_date}/test.csv"
+  valid_save_path: "${data.paths.data_files}${data.paths.data_create_date}/valid.csv"
 
 data_split:
-  stratify_col: 
+  stratify_col: 'label_-15_1min_close'
   test_percent: 0.3
   valid_percent: 0.3
 
