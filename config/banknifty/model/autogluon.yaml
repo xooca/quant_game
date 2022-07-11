@@ -1,0 +1,26 @@
+autogluon:
+  model_metadata:
+    target_column: label_-15_1min_close
+    id_col: None
+    model_files: /content/gdrive/MyDrive/Work/trading/model/
+    base_model_loc: ${data.paths.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
+    model_name: banknifty_${autogluon.autogluon.model_metadata.target_column}.pkl
+    model_save_path: ${autogluon.autogluon.model_metadata.base_model_loc}${autogluon.autogluon.model_metadata.model_name}
+  evaluation:
+    eval_metric: accuracy
+  optimization:
+    generic: 
+      time_limit: 120
+    hyperparameter_tune_kwargs:
+      num_trials: 5
+      search_strategy: auto
+      scheduler: 'local'
+    hyperparamters:
+      nn_options : 
+          num_epochs: 10
+          learning_rate: ag.space.Real(1e-4, 1e-2, default=5e-4, log=True)
+          activation: ag.space.Categorical('relu', 'softrelu', 'tanh')
+          dropout_prob: ag.space.Real(0.0, 0.5, default=0.1)
+      gbm_options : 
+          num_boost_round: 100
+          num_leaves': ag.space.Int(lower=26, upper=66, default=36)
