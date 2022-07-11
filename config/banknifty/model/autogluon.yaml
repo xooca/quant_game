@@ -1,26 +1,44 @@
 autogluon:
   model_metadata:
+    model_prefix: autogluon
     target_column: label_-15_1min_close
     id_col: None
     model_files: /content/gdrive/MyDrive/Work/trading/model/
     base_model_loc: ${data.paths.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
-    model_name: banknifty_${autogluon.autogluon.model_metadata.target_column}.pkl
-    model_save_path: ${autogluon.autogluon.model_metadata.base_model_loc}${autogluon.autogluon.model_metadata.model_name}
+    model_name: ${model.autogluon.model_metadata.model_prefix}_${data.paths.ticker_name}_${model.autogluon.model_metadata.target_column}
+    model_save_path: ${model.autogluon.model_metadata.base_model_loc}${model.autogluon.model_metadata.model_name}.pkl
+    model_parameter_save_path: ${model.autogluon.model_metadata.base_model_loc}${model.autogluon.model_metadata.model_name}_hyperparameter.pkl
+
   evaluation:
     eval_metric: accuracy
+    load_predictor_from_path: 0
+  prediction:
+    load_predictor_from_path: 0
   optimization:
     generic: 
       time_limit: 120
+      use_default_parameter: 0
+      optimize: 0
+      load_parameter_from_path: False
     hyperparameter_tune_kwargs:
       num_trials: 5
       search_strategy: auto
       scheduler: 'local'
     hyperparamters:
-      nn_options : 
+      NN_TORCH : 
           num_epochs: 10
           learning_rate: ag.space.Real(1e-4, 1e-2, default=5e-4, log=True)
           activation: ag.space.Categorical('relu', 'softrelu', 'tanh')
           dropout_prob: ag.space.Real(0.0, 0.5, default=0.1)
-      gbm_options : 
+      GBM : 
           num_boost_round: 100
-          num_leaves': ag.space.Int(lower=26, upper=66, default=36)
+          num_leaves: ag.space.Int(lower=26, upper=66, default=36)
+    default_hyperparameters:
+      NN_TORCH : 
+          num_epochs: 10
+          learning_rate: 0.2
+          activation: relu
+          dropout_prob: 0.3
+      GBM : 
+          num_boost_round: 100
+          num_leaves: 23     

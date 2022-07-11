@@ -10,7 +10,7 @@ from hydra import initialize, initialize_config_module, initialize_config_dir, c
 from omegaconf import OmegaConf
 import data.data_utils as du
 
-dc = du.initialize_config(overrides=["+data=data"],version_base=None, config_path="../config")
+dc = du.initialize_config(overrides=["+data=data"],version_base=None, config_path="../config/banknifty/")
 OHLC_COLUMNS = list(dc.data.common.ohlc_column)
 TECHNICAL_IND_PATTERN = list(dc.data.common.technical_indicator_col_pattern)
 SELECTED_COLUMNS = list(dc.data.common.selected_columns)
