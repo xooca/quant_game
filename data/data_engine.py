@@ -1235,4 +1235,3 @@ class GapOpenMinuteChart(BaseEstimator, TransformerMixin):
         if self.verbose:
             logging.info(f"Shape of dataframe after GapOpenMinuteChart is {df.shape}") 
         return df
-
