@@ -1,6 +1,7 @@
 import pandas as pd
 from hydra.core.global_hydra import GlobalHydra
 import pandas as pd
+from sklearn.model_selection import train_test_split
 GlobalHydra.instance().clear()
 #importlib.import_module('data.data_pipelines.generic_pipeline')
 import data.data_pipelines as dd
@@ -18,3 +19,23 @@ for pipeline in dd.dc.data.datapipeline.merge_pipeline_to_master:
     tmp_cols = [col for col in tmpdf.columns.tolist() if col not in tmp_exclude_cols]
     tmpdf = tmpdf[tmp_cols]
     master_df = pd.merge(master_df,tmpdf, how='inner', left_index=True, right_index=True)
+
+if dd.dc.data.data_split.test_percent is None:
+    test_size = 0.2
+else:
+    test_size = dd.dc.data.data_split.test_percent
+
+if dd.dc.data.data_split.stratify_col is not None:
+    train, test = train_test_split(master_df, test_size=test_size,stratify=master_df[dd.dc.data.data_split.stratify_col])
+    test.to_csv(dd.dc.data.paths.test_save_path)
+    if dd.dc.data.data_split.valid_percent is not None:
+        train, valid = train_test_split(train, test_size=dd.dc.data.data_split.valid_percent,stratify=master_df[dd.dc.data.data_split.stratify_col])
+        train.to_csv(dd.dc.data.paths.train_save_path)
+        valid.to_csv(dd.dc.data.paths.valid_save_path)
+else:
+    train, test = train_test_split(master_df, test_size=test_size)
+    test.to_csv(dd.dc.data.paths.test_save_path)
+    if dd.dc.data.data_split.valid_percent is not None:
+        train, valid = train_test_split(train, test_size=dd.dc.data.data_split.valid_percent)
+        train.to_csv(dd.dc.data.paths.train_save_path)
+        valid.to_csv(dd.dc.data.paths.valid_save_path)
