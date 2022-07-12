@@ -4,7 +4,7 @@ autogluon:
     target_column: label_-15_1min_close
     id_col: None
     model_files: /content/gdrive/MyDrive/Work/trading/model/
-    base_model_loc: ${data.paths.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
+    base_model_loc: ${model.autogluon.model_metadata.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
     model_name: ${model.autogluon.model_metadata.model_prefix}_${data.paths.ticker_name}_${model.autogluon.model_metadata.target_column}
     model_save_path: ${model.autogluon.model_metadata.base_model_loc}${model.autogluon.model_metadata.model_name}.pkl
     model_parameter_save_path: ${model.autogluon.model_metadata.base_model_loc}${model.autogluon.model_metadata.model_name}_hyperparameter.pkl

@@ -1,3 +1,5 @@
+import autogluon.core as ag
+from autogluon.tabular import TabularDataset
 class modelling:
     def __init__(self,config):
         self.config = config
@@ -10,6 +12,7 @@ class modelling:
             self.test = TabularDataset(self.config.data.paths.test_save_path)
 
     def define_hyperparameters(self):
+        import autogluon.core as ag
         if self.config.model.autogluon.optimization.generic.use_default_parameter == 1:
             self.hyperparameters = 'default'
         else:
@@ -26,9 +29,10 @@ class modelling:
         if self.config.model.autogluon.optimization.generic.optimize == 0 or self.config.model.autogluon.optimization.generic.use_default_parameter==1:
             self.hyperparameter_tune_kwargs = None
         else:
-            self.hyperparameter_tune_kwargs =self.config.model.autogluon.optimization.hyperparameter_tune_kwargs 
+            self.hyperparameter_tune_kwargs =self.config.model.autogluon.optimization.hyperparameter_tune_kwargs
+            self.hyperparameter_tune_kwargs = dict(self.hyperparameter_tune_kwargs)
 
-    def train(self):
+    def trainer(self):
         from autogluon.tabular import TabularPredictor
         import autogluon.core as ag
         self.predictor = TabularPredictor(label=self.config.model.autogluon.model_metadata.target_column, path=self.config.model.autogluon.model_metadata.model_save_path, eval_metric=self.config.model.autogluon.evaluation.eval_metric).fit(
