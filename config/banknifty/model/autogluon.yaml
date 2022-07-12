@@ -18,7 +18,7 @@ autogluon:
     generic: 
       time_limit: 120
       use_default_parameter: 0
-      optimize: 0
+      optimize: 1
       load_parameter_from_path: False
     hyperparameter_tune_kwargs:
       num_trials: 5

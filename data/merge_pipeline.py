@@ -29,7 +29,7 @@ if dd.dc.data.data_split.stratify_col is not None:
     train, test = train_test_split(master_df, test_size=test_size,stratify=master_df[dd.dc.data.data_split.stratify_col])
     test.to_csv(dd.dc.data.paths.test_save_path)
     if dd.dc.data.data_split.valid_percent is not None:
-        train, valid = train_test_split(train, test_size=dd.dc.data.data_split.valid_percent,stratify=master_df[dd.dc.data.data_split.stratify_col])
+        train, valid = train_test_split(train, test_size=dd.dc.data.data_split.valid_percent,stratify=train[dd.dc.data.data_split.stratify_col])
         train.to_csv(dd.dc.data.paths.train_save_path)
         valid.to_csv(dd.dc.data.paths.valid_save_path)
 else:

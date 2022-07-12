@@ -4,13 +4,13 @@ class modelling:
 
     def define_dataset(self,load_test=False):
         from autogluon.tabular import TabularDataset
-        self.train = TabularDataset(self.config.data.path.train_save_path)
-        self.valid = TabularDataset(self.config.data.path.valid_save_path)
+        self.train = TabularDataset(self.config.data.paths.train_save_path)
+        self.valid = TabularDataset(self.config.data.paths.valid_save_path)
         if load_test:
-            self.test = TabularDataset(self.config.data.path.test_save_path)
+            self.test = TabularDataset(self.config.data.paths.test_save_path)
 
     def define_hyperparameters(self):
-        if self.config.model.autogluon.optimization.generic.use_default_parameter == 0:
+        if self.config.model.autogluon.optimization.generic.use_default_parameter == 1:
             self.hyperparameters = 'default'
         else:
             self.hyperparameters = {}
@@ -23,7 +23,7 @@ class modelling:
                     else:
                         l = eval(b)
                         self.hyperparameters[i].update({a:l}) 
-        if self.config.model.autogluon.optimization.generic.optimize == 0 or self.config.model.autogluon.optimization.generic.use_default_parameter==0:
+        if self.config.model.autogluon.optimization.generic.optimize == 0 or self.config.model.autogluon.optimization.generic.use_default_parameter==1:
             self.hyperparameter_tune_kwargs = None
         else:
             self.hyperparameter_tune_kwargs =self.config.model.autogluon.optimization.hyperparameter_tune_kwargs 
