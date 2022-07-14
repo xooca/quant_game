@@ -45,3 +45,4 @@ data_files/*
 junk/NIFTY_data/data_01hour.csv
 *.csv
 *.pyc
+*.pkl

@@ -54,6 +54,13 @@ def nullcolumns(df):
     t = t.sort_values(by='nullcnt',ascending=False)
     return t
 
+def checknans(df,threshold=100):
+    nan_cols =[]
+    for col in df.columns.tolist() :
+        if sum(np.isnan(df[col])) > threshold:
+            print(f"{col}.... {sum(np.isnan(df.train[col]))}")
+            nan_cols.append(col)
+    return nan_cols
 class datacleaner:
     def __init__(self, df, targetcol, id_cols=None, cat_threshold=100):
         self.df_train = df
