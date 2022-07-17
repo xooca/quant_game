@@ -5,12 +5,9 @@ autogluon:
     drop_columns: [label_-30_1min_close,label_-60_1min_close,'Unnamed: 0',HILOl_13_21,HILOs_13_21,MCGD_10,PSARl_0.02_0.2,PSARs_0.02_0.2,QQEl_14_5_4.236,QQEs_14_5_4.236,SUPERTl_7_3.0,SUPERTs_7_3.0,PVDR_close_w,PVDR_close_w_MAX_MIN,PVDR_open_w,PVDR_open_w_MAX_MIN,PVDR_high_w,PVDR_high_w_MAX_MIN,PVDR_low_w,PVDR_low_w_MAX_MIN]
     sampling_type: frac
     combine_train_valid: True
-    sampling: 0.6
-    presets: best_quality
+    sampling: 0.4
+    presets: good_quality
     id_col: None
-    predictor_params:
-      sample_weight: auto_weight
-
     model_files: /content/gdrive/MyDrive/Work/trading/model/
     base_model_loc: ${model.autogluon.model_metadata.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
     model_name: ${model.autogluon.model_metadata.model_prefix}_${data.paths.ticker_name}_${model.autogluon.model_metadata.target_column}
@@ -20,59 +17,49 @@ autogluon:
   evaluation:
     eval_metric: accuracy
     load_predictor_from_path: 0
+
   prediction:
     load_predictor_from_path: 0
-  optimization:
+
+  trainer:
     generic: 
-      time_limit: 60000
+      time_limit: 12000
       use_default_parameter: 0
       optimize: 0
       load_parameter_from_path: False
-    hyperparameter_tune_kwargs:
-      num_trials: 5
-      searcher: auto
-      scheduler: local
-    hyperparamters:
-      NN_TORCH : 
-        num_epochs: 10
-        learning_rate: ag.space.Real(1e-4, 1e-2, default=5e-4, log=True)
-        activation: ag.space.Categorical('relu', 'softrelu', 'tanh')
-        dropout_prob: ag.space.Real(0.0, 0.5, default=0.1)
-      GBM : 
-        num_boost_round: 100
-        num_leaves: ag.space.Int(lower=26, upper=66, default=36)
-    hyperparameters: ${model.autogluon.optimization.hyperparameters_stack_emsemble}
-    hyperparameters_normal:
-      NN_TORCH: 
-        num_epochs: 10
-        learning_rate: 0.2
-        activation: relu
-        dropout_prob: 0.3
-      GBM: 
-        num_boost_round: 100
-        num_leaves: 23     
+      trainer_option: 2
+      presets: good_quality
+    hyperparameters: ${model.autogluon.trainer.hyperparameters_stack_emsemble}  
     hyperparameters_stack_emsemble:
       1:
-        NN_TORCH: 
-          - ${model.autogluon.optimization.hyperparameter_definitions.hyperparameters_stack_emsemble.NN_TORCH_DEF1}
-          - ${model.autogluon.optimization.hyperparameter_definitions.hyperparameters_stack_emsemble.NN_TORCH_DEF2}
+        NN_TORCH:           
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.TORCH1}
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.TORCH2}
       2:
         GBM:
-          - ${model.autogluon.optimization.hyperparameter_definitions.hyperparameters_stack_emsemble.GBM1}
-          - ${model.autogluon.optimization.hyperparameter_definitions.hyperparameters_stack_emsemble.GBM2}
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.GBM1}
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.GBM2}
       3:
         XGB:
-          - ${model.autogluon.optimization.hyperparameter_definitions.hyperparameters_stack_emsemble.XGB1}
-          - ${model.autogluon.optimization.hyperparameter_definitions.hyperparameters_stack_emsemble.XGB2}
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.XGB1}
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.XGB2}
+      4:
+        CAT:
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.CAT1}
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.CAT2}
+      5:
+        KNN:
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.KNN1}
+          - ${model.autogluon.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.KNN2}
 
     hyperparameter_definitions:
       hyperparameters_stack_emsemble:
-        NN_TORCH_DEF1:
+        TORCH1:
           num_epochs: 10
           learning_rate: 0.2
           activation: relu
           dropout_prob: 0.3
-        NN_TORCH_DEF2:
+        TORCH2:
           num_epochs: 12
           learning_rate: 0.01
           activation: prelu
@@ -123,12 +110,46 @@ autogluon:
           max_leaves : 30
         CAT1:
           learning_rate: 0.02
-          gamma: 1.3
-          max_depth: 3
-          min_child_weight: 1.7
-          max_delta_step : 0
-          subsample: gradient_based
-          lambda: 2
-          alpha: 0.8
-          tree_method: auto
-          max_leaves : 30
+          l2_leaf_reg: 1.3
+          max_depth: 4
+          max_leaves: 19
+          auto_class_weights : Balanced
+        CAT2:
+          learning_rate: 0.02
+          l2_leaf_reg: 4
+          max_depth: 32
+          max_leaves: 13
+          auto_class_weights : SqrtBalanced
+        KNN1:
+          n_neighbors: 8
+          weights: uniform
+          algorithm: kd_tree
+          leaf_size: 40
+        KNN2:
+          n_neighbors: 8
+          weights: distance
+          algorithm: auto
+          leaf_size: 22
+    hyperparameters_normal:
+      NN_TORCH: 
+        num_epochs: 10
+        learning_rate: 0.2
+        activation: relu
+        dropout_prob: 0.3
+      GBM: 
+        num_boost_round: 100
+        num_leaves: 23 
+  optimization:
+    hyperparameter_tune_kwargs:
+      num_trials: 5
+      searcher: auto
+      scheduler: local
+    hyperparameter_tuning:
+      NN_TORCH : 
+        num_epochs: 10
+        learning_rate: ag.space.Real(1e-4, 1e-2, default=5e-4, log=True)
+        activation: ag.space.Categorical('relu', 'softrelu', 'tanh')
+        dropout_prob: ag.space.Real(0.0, 0.5, default=0.1)
+      GBM : 
+        num_boost_round: 100
+        num_leaves: ag.space.Int(lower=26, upper=66, default=36)

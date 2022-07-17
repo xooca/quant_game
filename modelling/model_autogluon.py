@@ -4,6 +4,7 @@ import numpy as np
 class modelling:
     def __init__(self,config):
         self.config = config
+        self.trainer_option = self.config.model.autogluon.trainer.generic.trainer_option
 
     def sampling(self,df):
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -53,22 +54,23 @@ class modelling:
                         self.hyperparameters[i].update({a:b})
                     else:
                         l = eval(b)
-                        self.hyperparameters[i].update({a:l}) 
-        if self.config.model.autogluon.optimization.generic.optimize == 0 or self.config.model.autogluon.optimization.generic.use_default_parameter==1:
-            self.hyperparameter_tune_kwargs = None
-        else:
-            self.hyperparameter_tune_kwargs =self.config.model.autogluon.optimization.hyperparameter_tune_kwargs
-            self.hyperparameter_tune_kwargs = dict(self.hyperparameter_tune_kwargs)
+                        self.hyperparameters[i].update({a:l})
+        self.hyperparameter_tune_kwargs =self.config.model.autogluon.optimization.hyperparameter_tune_kwargs
+        self.hyperparameter_tune_kwargs = dict(self.hyperparameter_tune_kwargs)
 
     def trainer(self):
         from autogluon.tabular import TabularPredictor
         import autogluon.core as ag
-        if self.hyperparameter_tune_kwargs is not None:
+        if self.trainer_option == 1:
             self.predictor = TabularPredictor(label=self.config.model.autogluon.model_metadata.target_column, path=self.config.model.autogluon.model_metadata.model_save_path, eval_metric=self.config.model.autogluon.evaluation.eval_metric).fit(
-            self.train, tuning_data=self.valid, time_limit=self.config.model.autogluon.optimization.generic.time_limit,
-            hyperparameters=self.hyperparameters, hyperparameter_tune_kwargs=self.hyperparameter_tune_kwargs,presets=self.config.model.autogluon.model_metadata.presets)
+            self.train, tuning_data=self.valid, time_limit=self.config.model.autogluon.trainer.generic.time_limit,
+            hyperparameters=self.hyperparameters, hyperparameter_tune_kwargs=self.hyperparameter_tune_kwargs,presets=self.config.model.autogluon.trainer.generic.presets)
+        elif self.trainer_option == 2:
+            self.predictor = TabularPredictor(label=self.config.model.autogluon.model_metadata.target_column, path=self.config.model.autogluon.model_metadata.model_save_path, eval_metric=self.config.model.autogluon.evaluation.eval_metric).fit(self.train,presets=self.config.model.autogluon.trainer.generic.presets)
+        elif self.trainer_option == 3:
+            self.predictor = TabularPredictor(label=self.config.model.autogluon.model_metadata.target_column, path=self.config.model.autogluon.model_metadata.model_save_path, eval_metric=self.config.model.autogluon.evaluation.eval_metric).fit(self.train,presets=self.config.model.autogluon.trainer.generic.presets,hyperparameters = dict(self.config.model.autogluon.trainer.hyperparameters))
         else:
-            self.predictor = TabularPredictor(label=self.config.model.autogluon.model_metadata.target_column, path=self.config.model.autogluon.model_metadata.model_save_path, eval_metric=self.config.model.autogluon.evaluation.eval_metric).fit(self.train ,presets=self.config.model.autogluon.model_metadata.presets)
+            print(f"Option {self.trainer_option} is not supported")
         self.results = self.predictor.fit_summary(show_plot=True)
 
     def evaluate(self,test_df=None):
