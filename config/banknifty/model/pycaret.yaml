@@ -22,26 +22,40 @@ pycaret:
     load_predictor_from_path: 0
 
   trainer:
+    generic: 
+      time_limit: 12000
+      use_default_parameter: 0
+      optimize: 0
+      load_parameter_from_path: False
+      trainer_option: 2
+      presets: good_quality
     setup:
       target: ${model.pycaret.model_metadata.target_column}
       feature_selection: True
-      remove_multicollinearity: True
+      remove_multicollinearity: False
       feature_interaction: False
       feature_ratio: False
       polynomial_features: False
       trigonometry_features: False
-      combine_rare_levels: True
-      create_clusters: True
+      combine_rare_levels: False
+      create_clusters: False
       normalize: False
       transformation: False
       imputation_type: 'iterative'
       fix_imbalance: False
       session_id: 123
       use_gpu: True
-    compare_models:
+    compare_models1:
       models: ['xgboost','gpc','rf', 'knn', 'lightgbm','catboost','et','dummy']
       fold: 3
       sort: 'f1'
+    compare_models:
+      include: ['xgboost','rf','lightgbm','catboost']
+      fold: 3
+      n_select: 4
+      sort: 'f1'
+    compare_models2:
+      n_select: 4
     create_model:
       cm1:
         estimator: 'xgboost'
@@ -51,15 +65,32 @@ pycaret:
         extimator: 'gpc'
         fold: 4
         return_train_score: True
+    tune_model_all:
+      return_tuner: False
+      search_library: optuna
+      early_stopping: hyperband
+      fold: 5
     tune_model:
       cm1:
-        return_tuner: True,
-        search_library: 'optuna'
-        fold: 2
+        return_tuner: False
+        search_library: optuna
+        early_stopping: hyperband
+        fold: 5
       cm2:
-        return_tuner: True,
-        search_library: 'optuna'
-        fold: 2  
+        return_tuner: False
+        search_library: optuna
+        early_stopping: hyperband
+        fold: 5  
+      cm3:
+        return_tuner: False
+        search_library: optuna
+        early_stopping: hyperband
+        fold: 5  
+      cm4:
+        return_tuner: False
+        search_library: optuna
+        early_stopping: hyperband
+        fold: 5  
     stack_model:
       round: 4
       method: auto
@@ -69,134 +100,4 @@ pycaret:
       method: soft
       choose_better: True 
 
-    generic: 
-      time_limit: 12000
-      use_default_parameter: 0
-      optimize: 0
-      load_parameter_from_path: False
-      trainer_option: 2
-      presets: good_quality
-    hyperparameters: ${model.pycaret.trainer.hyperparameters_stack_emsemble}  
-    hyperparameters_stack_emsemble:
-      1:
-        NN_TORCH:           
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.TORCH1}
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.TORCH2}
-      2:
-        GBM:
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.GBM1}
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.GBM2}
-      3:
-        XGB:
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.XGB1}
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.XGB2}
-      4:
-        CAT:
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.CAT1}
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.CAT2}
-      5:
-        KNN:
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.KNN1}
-          - ${model.pycaret.trainer.hyperparameter_definitions.hyperparameters_stack_emsemble.KNN2}
-
-    hyperparameter_definitions:
-      hyperparameters_stack_emsemble:
-        TORCH1:
-          num_epochs: 10
-          learning_rate: 0.2
-          activation: relu
-          dropout_prob: 0.3
-        TORCH2:
-          num_epochs: 12
-          learning_rate: 0.01
-          activation: prelu
-          dropout_prob: 0.25
-        GBM1:
-          num_iterations: 100
-          boosting: gbdt
-          num_leaves: 23
-          learning_rate: 0.1
-          early_stopping_round: 100
-          lambda_l1: 1.7
-          lambda_l2: 2.6
-          bagging_freq: 1.2
-          bagging_fraction: 1.3
-          max_depth: 10
-        GBM2:
-          num_iterations: 300
-          boosting: goss
-          num_leaves: 34
-          learning_rate: 0.05
-          early_stopping_round: 100
-          lambda_l1: 1.1
-          lambda_l2: 1.8
-          bagging_freq: 1.1
-          bagging_fraction: 0.9
-          max_depth: 20
-        XGB1:
-          learning_rate: 0.01
-          gamma: 1.1
-          max_depth: 11
-          min_child_weight: 1.2
-          max_delta_step : 0
-          subsample: uniform,gradient_based
-          lambda: 1.8
-          alpha: 1.1
-          tree_method: auto
-          max_leaves : 20
-        XGB2:
-          learning_rate: 0.02
-          gamma: 1.3
-          max_depth: 3
-          min_child_weight: 1.7
-          max_delta_step : 0
-          subsample: gradient_based
-          lambda: 2
-          alpha: 0.8
-          tree_method: auto
-          max_leaves : 30
-        CAT1:
-          learning_rate: 0.02
-          l2_leaf_reg: 1.3
-          max_depth: 4
-          max_leaves: 19
-          auto_class_weights : Balanced
-        CAT2:
-          learning_rate: 0.02
-          l2_leaf_reg: 4
-          max_depth: 32
-          max_leaves: 13
-          auto_class_weights : SqrtBalanced
-        KNN1:
-          n_neighbors: 8
-          weights: uniform
-          algorithm: kd_tree
-          leaf_size: 40
-        KNN2:
-          n_neighbors: 8
-          weights: distance
-          algorithm: auto
-          leaf_size: 22
-    hyperparameters_normal:
-      NN_TORCH: 
-        num_epochs: 10
-        learning_rate: 0.2
-        activation: relu
-        dropout_prob: 0.3
-      GBM: 
-        num_boost_round: 100
-        num_leaves: 23 
-  optimization:
-    hyperparameter_tune_kwargs:
-      num_trials: 5
-      searcher: auto
-      scheduler: local
-    hyperparameter_tuning:
-      NN_TORCH : 
-        num_epochs: 10
-        learning_rate: ag.space.Real(1e-4, 1e-2, default=5e-4, log=True)
-        activation: ag.space.Categorical('relu', 'softrelu', 'tanh')
-        dropout_prob: ag.space.Real(0.0, 0.5, default=0.1)
-      GBM : 
-        num_boost_round: 100
-        num_leaves: ag.space.Int(lower=26, upper=66, default=36)
+    

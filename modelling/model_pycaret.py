@@ -41,30 +41,42 @@ class modelling:
 
     def initial_setup(self): 
         self.experiment_setup = setup(data = self.train, **self.config.model.pycaret.trainer.setup)
-
-    def compare_models(self,compare_option==1):
+        
+    def model_comparison(self, compare_option=1):
         if compare_option == 1:
             arg_dict = dict(self.config.model.pycaret.trainer.compare_models)
             self.model_compare = compare_models(**arg_dict) 
         else:
             self.model_compare = compare_models() 
 
-    def create_models(self):
+    def model_creation(self):
         self.all_models =[] 
         for args,vals in self.config.model.pycaret.trainer.create_models.items():
             vals = dict(vals)
             model = create_model(**vals) 
             self.all_models.append(model)
 
-    def tune_models(self):
-        self.all_tuned_models =[] 
-        for model,vals in zip(self.all_models,self.config.model.pycaret.trainer.tune_model.items()):
-            arg_dict = dict(vals[-1])
-            arg_dict['estimator'] = model
-            tuned_model = tune_model(**arg_dict) 
-            self.all_tuned_models.append(tuned_model)
 
-    def blend_model(self,estimator_list=None):
+    def model_tuning(self,from_compare=True):
+        self.all_tuned_models =[]
+        if from_compare:
+            self.model_considered = self.model_compare
+        else:
+            self.model_considered = self.all_models
+        if len(self.model_considered) == len(self.config.model.pycaret.trainer.tune_model):
+            for model,vals in zip(self.model_considered,self.config.model.pycaret.trainer.tune_model.items()):
+                arg_dict = dict(vals[-1])
+                arg_dict['estimator'] = model
+                tuned_model = tune_model(**arg_dict) 
+                self.all_tuned_models.append(tuned_model)
+        else:
+            for model in self.model_considered:
+                arg_dict = self.model_considered,self.config.model.pycaret.trainer.tune_model_all
+                arg_dict['estimator'] = model
+                tuned_model = tune_model(**arg_dict) 
+                self.all_tuned_models.append(tuned_model)
+
+    def model_blending(self,estimator_list=None):
         arg_dict = dict(self.config.model.pycaret.trainer.blend_model)
         if estimator_list is not None:
             arg_dict['estimator_list'] = estimator_list
@@ -72,29 +84,25 @@ class modelling:
             arg_dict['estimator_list'] = self.all_tuned_models
         self.blender = blend_models(**arg_dict)
 
-    def stack_model(self,estimator_list,meta_model):
+    def model_stacking(self,estimator_list=None,meta_model=None):
         arg_dict = dict(self.config.model.pycaret.trainer.stack_model)
-        arg_dict['estimator_list'] = estimator_list
-        arg_dict['meta_model'] = meta_model
+        if estimator_list is not None:
+            arg_dict['estimator_list'] = estimator_list
+            arg_dict['meta_model'] = meta_model
+        else:
+            arg_dict['estimator_list'] = self.all_tuned_models[1:]
+            arg_dict['meta_model'] = self.all_tuned_models[0]
         self.stacker = stack_models(**arg_dict)
 
     def trainer(self):
         self.initial_setup()
-        self.compare_models()
-        self.tune_models()
-
-    def evaluate(self,test_df=None):
-        evaluate_model(rf)
-
-    def predict(self,predict_df):
-        from autogluon.tabular import TabularPredictor
-        if self.config.model.autogluon.prediction.load_predictor_from_path == 0:
-            self.predictor = TabularPredictor.load(self.config.model.autogluon.model_metadata.model_save_path)
-        self.predictions = self.predictor.predict(predict_df)
-        self.probabilities = self.predictor.predict_proba(predict_df)
-
-    def save_artifacts(self):
-        pass
+        print("******** Setup Completed ************")
+        self.model_comparison()
+        print("******** Model Comparison Completed ************")
+        self.model_tuning()
+        print("******** Model Tuning Completed ************")
+        self.model_blending()
+        print("******** Model Blending Completed ************")
 
 
 
