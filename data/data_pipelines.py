@@ -160,8 +160,8 @@ price_range_pipe = Pipeline([
     ])
 
 label_creator_pipe = Pipeline([
-    ('labelgenerator_1', de.LabelCreator(freq='1min',shift=-15,shift_column=dc.data.common.label_generator_col)),
-    ('labelgenerator_2', de.LabelCreator(freq='1min',shift=-30,shift_column=dc.data.common.label_generator_col)),
-    ('labelgenerator_3', de.LabelCreator(freq='1min',shift=-60,shift_column=dc.data.common.label_generator_col)),
-    ('labelgenerator_4', de.LabelCreator(freq='1min',shift=-45,shift_column=dc.data.common.label_generator_col)),
+    ('labelgenerator_1', de.LabelCreator_Light(freq='1min',shift=-15,shift_column=dc.data.common.label_generator_col)),
+    ('labelgenerator_2', de.LabelCreator_Light(freq='1min',shift=-30,shift_column=dc.data.common.label_generator_col)),
+    ('labelgenerator_3', de.LabelCreator_Light(freq='1min',shift=-60,shift_column=dc.data.common.label_generator_col)),
+    ('labelgenerator_4', de.LabelCreator_Light(freq='1min',shift=-45,shift_column=dc.data.common.label_generator_col)),
     ])

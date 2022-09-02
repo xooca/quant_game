@@ -1,6 +1,6 @@
 paths:
   ticker_name: 'banknifty'
-  data_create_date: '2022-07-09'
+  data_create_date: '2022-09-02'
   data_files: "/content/gdrive/MyDrive/Work/trading/data_files/"
   base_data_loc: "${data.paths.data_files}${data.paths.ticker_name}/${data.paths.data_create_date}/"
   input_path: "/content/gdrive/MyDrive/Work/trading/data_files/banknifty/input/banknifty.csv"
@@ -9,7 +9,7 @@ paths:
   test_save_path: "${data.paths.base_data_loc}test.csv"
   valid_save_path: "${data.paths.base_data_loc}valid.csv"
   datapipeline: data.data_pipelines_new
-  
+
 data_split:
   stratify_col: 'label_-15_1min_close'
   test_percent: 0.3

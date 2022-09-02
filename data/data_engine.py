@@ -169,6 +169,40 @@ class LabelCreator(BaseEstimator, TransformerMixin):
         logging.info(f"Shape of dataframe after transform is {df.shape}") 
         return df
 
+class LabelCreator_Light(BaseEstimator, TransformerMixin):
+    def __init__(self, freq='1min',shift=-15,shift_column='close'):
+        self.freq = freq
+        self.shift = shift
+        self.shift_column = shift_column
+        self.label_name = f'label_{shift}_{freq}_{shift_column}'
+        
+    def fit(self, X, y=None):
+        return self    # Nothing to do in fit in this scenario
+
+    def label_generator(self,val):
+        if val <= 30 and val>=0:
+            return '-0to30'
+        elif val > 30 and val <= 80:
+            return '30to80'
+        elif val > 80:
+            return 'above80'
+        elif val > -30 and val <= 0:
+            return '0to-30'
+        elif val > -80 and val <= -30:
+            return '-30to-60'
+        elif val <= -80:
+            return 'below80'
+        else:
+            return 'unknown'
+
+    def transform(self, df):
+        #df.index = pd.to_datetime(df.index)
+        df.index = pd.DatetimeIndex(df.index)
+        df = df.sort_index()
+        df = df[~df.index.duplicated(keep='first')]
+        df[self.label_name] = df.shift(self.shift, freq=self.freq)[self.shift_column].subtract(df[self.shift_column]).apply(self.label_generator)  
+        logging.info(f"Shape of dataframe after transform is {df.shape}") 
+        return df
 class TechnicalIndicator(BaseEstimator, TransformerMixin):
     def __init__(self,method_type = ['volumn_','volatile_','transform_','cycle_','pattern_','stats_','math_','overlap_']):
         self.method_type = method_type
