@@ -58,6 +58,8 @@ last_tick_greater_values_pipe = Pipeline([
     ('ltgvc1', de.LastTicksGreaterValuesCount(column_pattern=[],columns= SELECTED_COLUMNS,create_new_col = True,last_ticks=10)),
     ('ltgvc2', de.LastTicksGreaterValuesCount(column_pattern=[],columns= SELECTED_COLUMNS,create_new_col = True,last_ticks=15)),
     ('ltgvc3', de.LastTicksGreaterValuesCount(column_pattern=[],columns= SELECTED_COLUMNS,create_new_col = True,last_ticks=30)),  
+    ('ltgvc4', de.LastTicksGreaterValuesCount(column_pattern=[],columns= SELECTED_COLUMNS,create_new_col = True,last_ticks=60)), 
+    ('ltgvc5', de.LastTicksGreaterValuesCount(column_pattern=[],columns= SELECTED_COLUMNS,create_new_col = True,last_ticks=120)),  
     ])
 
 zscore_log_percentage_chg_pipe = Pipeline([
@@ -72,6 +74,8 @@ zscore_log_percentage_chg_pipe = Pipeline([
    ('pc2', de.PercentageChange(columns= SELECTED_COLUMNS,periods=15, fill_method='pad', limit=None, freq=None,verbose=True)),
    ('pc3', de.PercentageChange(columns= SELECTED_COLUMNS,periods=30, fill_method='pad', limit=None, freq=None,verbose=True)),
    ('pc4', de.PercentageChange(columns= SELECTED_COLUMNS,periods=60, fill_method='pad', limit=None, freq=None,verbose=True)),
+   ('pc5', de.PercentageChange(columns= SELECTED_COLUMNS,periods=90, fill_method='pad', limit=None, freq=None,verbose=True)),
+   ('pc6', de.PercentageChange(columns= SELECTED_COLUMNS,periods=120, fill_method='pad', limit=None, freq=None,verbose=True)),
     ])
 
 percentile_transform_pipe = Pipeline([
@@ -79,6 +83,17 @@ percentile_transform_pipe = Pipeline([
    ('pt2', de.PercentileTransform(columns= SELECTED_COLUMNS,window=15,min_periods=None,quantile=0.75,verbose=True)),
    ('pt3', de.PercentileTransform(columns= SELECTED_COLUMNS,window=30,min_periods=None,quantile=0.75,verbose=True)),
    ('pt4', de.PercentileTransform(columns= SELECTED_COLUMNS,window=60,min_periods=None,quantile=0.75,verbose=True)),
+   ('pt5', de.PercentileTransform(columns= SELECTED_COLUMNS,window=90,min_periods=None,quantile=0.75,verbose=True)),
+   ('pt6', de.PercentileTransform(columns= SELECTED_COLUMNS,window=120,min_periods=None,quantile=0.75,verbose=True)),
+    ])
+
+percentile_transform_pipe1 = Pipeline([
+   ('pt11', de.PercentileTransform(columns= SELECTED_COLUMNS,window=10,min_periods=None,quantile=0.90,verbose=True)),
+   ('pt22', de.PercentileTransform(columns= SELECTED_COLUMNS,window=15,min_periods=None,quantile=0.90,verbose=True)),
+   ('pt33', de.PercentileTransform(columns= SELECTED_COLUMNS,window=30,min_periods=None,quantile=0.90,verbose=True)),
+   ('pt44', de.PercentileTransform(columns= SELECTED_COLUMNS,window=60,min_periods=None,quantile=0.90,verbose=True)),
+   ('pt55', de.PercentileTransform(columns= SELECTED_COLUMNS,window=90,min_periods=None,quantile=0.90,verbose=True)),
+   ('pt66', de.PercentileTransform(columns= SELECTED_COLUMNS,window=120,min_periods=None,quantile=0.90,verbose=True)),
     ])
 
 rolling_rank_pipe = Pipeline([
@@ -86,6 +101,8 @@ rolling_rank_pipe = Pipeline([
    ('rr2', de.RollingRank(columns= SELECTED_COLUMNS,window=15,min_periods=None,verbose=True)),
    ('rr3', de.RollingRank(columns= SELECTED_COLUMNS,window=30,min_periods=None,verbose=True)),
    ('rr4', de.RollingRank(columns= SELECTED_COLUMNS,window=60,min_periods=None,verbose=True)),
+   ('rr5', de.RollingRank(columns= SELECTED_COLUMNS,window=90,min_periods=None,verbose=True)),
+   ('rr6', de.RollingRank(columns= SELECTED_COLUMNS,window=120,min_periods=None,verbose=True)),
     ])
 
 bin_transform_pipe = Pipeline([
@@ -93,6 +110,8 @@ bin_transform_pipe = Pipeline([
    ('bt2', de.BinningTransform(columns= SELECTED_COLUMNS,window=15,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
    ('bt3', de.BinningTransform(columns= SELECTED_COLUMNS,window=30,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
    ('bt4', de.BinningTransform(columns= SELECTED_COLUMNS,window=60,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
+   ('bt5', de.BinningTransform(columns= SELECTED_COLUMNS,window=90,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
+   ('bt6', de.BinningTransform(columns= SELECTED_COLUMNS,window=120,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
     ])
 
 positive_negative_pipe = Pipeline([
@@ -100,6 +119,8 @@ positive_negative_pipe = Pipeline([
    ('pnt2', de.PositiveNegativeTrends(columns= SELECTED_COLUMNS,window=15,min_periods=None,verbose=True)),
    ('pnt3', de.PositiveNegativeTrends(columns= SELECTED_COLUMNS,window=30,min_periods=None,verbose=True)),
    ('pnt4', de.PositiveNegativeTrends(columns= SELECTED_COLUMNS,window=60,min_periods=None,verbose=True)),
+   ('pnt5', de.PositiveNegativeTrends(columns= SELECTED_COLUMNS,window=90,min_periods=None,verbose=True)),
+   ('pnt6', de.PositiveNegativeTrends(columns= SELECTED_COLUMNS,window=120,min_periods=None,verbose=True)),
     ])
 
 rolling_stats_pipe = Pipeline([
@@ -107,16 +128,22 @@ rolling_stats_pipe = Pipeline([
    ('rs2', de.Rolling_Stats(columns= SELECTED_COLUMNS,window=15,min_periods=None,verbose=True)),
    ('rs3', de.Rolling_Stats(columns= SELECTED_COLUMNS,window=30,min_periods=None,verbose=True)),
    ('rs4', de.Rolling_Stats(columns= SELECTED_COLUMNS,window=60,min_periods=None,verbose=True)),
+   ('rs5', de.Rolling_Stats(columns= SELECTED_COLUMNS,window=90,min_periods=None,verbose=True)),
+   ('rs6', de.Rolling_Stats(columns= SELECTED_COLUMNS,window=120,min_periods=None,verbose=True)),
 
    ('rswl1', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=10,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswl2', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=15,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswl3', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=30,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswl4', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=60,lookback_divider=2,min_periods=None,verbose=True)),
+   ('rswl5', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=90,lookback_divider=2,min_periods=None,verbose=True)),
+   ('rswl6', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=120,lookback_divider=2,min_periods=None,verbose=True)),
 
    ('rswlc1', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=10,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswlc2', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=15,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswlc3', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=30,lookback_divider=2,min_periods=None,verbose=True)),
-   ('rswlc4', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=60,lookback_divider=2,min_periods=None,verbose=True))
+   ('rswlc4', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=60,lookback_divider=2,min_periods=None,verbose=True)),
+   ('rswlc5', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=90,lookback_divider=2,min_periods=None,verbose=True))
+   ('rswlc6', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=120,lookback_divider=2,min_periods=None,verbose=True))
     ])
 
 price_range_pipe = Pipeline([
@@ -136,4 +163,5 @@ label_creator_pipe = Pipeline([
     ('labelgenerator_1', de.LabelCreator(freq='1min',shift=-15,shift_column=dc.data.common.label_generator_col)),
     ('labelgenerator_2', de.LabelCreator(freq='1min',shift=-30,shift_column=dc.data.common.label_generator_col)),
     ('labelgenerator_3', de.LabelCreator(freq='1min',shift=-60,shift_column=dc.data.common.label_generator_col)),
+    ('labelgenerator_4', de.LabelCreator(freq='1min',shift=-45,shift_column=dc.data.common.label_generator_col)),
     ])
