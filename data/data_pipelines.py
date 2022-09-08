@@ -135,14 +135,14 @@ rolling_stats_pipe = Pipeline([
    ('rswl2', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=15,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswl3', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=30,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswl4', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=60,lookback_divider=2,min_periods=None,verbose=True)),
-   ('rswl5', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=90,lookback_divider=2,min_periods=None,verbose=True)),
+   ('rswl5', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=90,lookback_divider=2,min_periods=None,verbose=True)), 
    ('rswl6', de.Rolling_Stats_withLookBack(columns= SELECTED_COLUMNS,window=120,lookback_divider=2,min_periods=None,verbose=True)),
 
    ('rswlc1', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=10,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswlc2', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=15,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswlc3', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=30,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswlc4', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=60,lookback_divider=2,min_periods=None,verbose=True)),
-   ('rswlc5', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=90,lookback_divider=2,min_periods=None,verbose=True))
+   ('rswlc5', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=90,lookback_divider=2,min_periods=None,verbose=True)),
    ('rswlc6', de.Rolling_Stats_withLookBack_Compare(columns=SELECTED_COLUMNS,window=120,lookback_divider=2,min_periods=None,verbose=True))
     ])
 

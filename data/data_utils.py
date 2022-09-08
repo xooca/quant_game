@@ -20,7 +20,7 @@ warnings.filterwarnings('ignore')
 os.getcwd()
 pd.options.display.max_columns = None
 
-def run_pipeline(pipe_list,df,pipeinfo_loc,data_loc,load_previous = True):
+def run_pipeline(pipe_list,df,pipeinfo_loc,data_loc,pipeline_save_loc,load_previous = True):
     pipe_list_save = [col for col in pipe_list]
     if load_previous:
         try:
@@ -40,6 +40,8 @@ def run_pipeline(pipe_list,df,pipeinfo_loc,data_loc,load_previous = True):
         df.to_csv(data_loc)
         with open(pipeinfo_loc, 'wb') as handle:
             pickle.dump(pipe_list_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(pipeline_save_loc, 'wb') as handle:
+            pickle.dump(pipe, handle, protocol=pickle.HIGHEST_PROTOCOL)
         logging.info(f"Pipeline {i} completed. Shape of the data is {df.shape}")
     return df
 
