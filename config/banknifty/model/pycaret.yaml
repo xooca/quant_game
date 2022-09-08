@@ -13,6 +13,7 @@ pycaret:
     model_name: ${model.pycaret.model_metadata.model_prefix}_${data.paths.ticker_name}_${model.pycaret.model_metadata.target_column}
     model_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}
     model_parameter_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_hyperparameter.pkl
+    model_spec:  modelling.model_pycaret
 
   evaluation:
     eval_metric: accuracy

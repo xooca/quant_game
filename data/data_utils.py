@@ -14,6 +14,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 import lightgbm as lgb
 from sklearn.preprocessing import MinMaxScaler
 import warnings
+import importlib
 
 warnings.filterwarnings('ignore')
 
@@ -49,6 +50,52 @@ def initialize_config(overrides,version_base=None, config_path="../config"):
     initialize(version_base=version_base, config_path=config_path)
     dc=compose(overrides= overrides)
     return dc
+class execute_data_pipeline:
+    def __init__(self,master_config):
+        self.data_config = self.initialize_config(**master_config)
+        feature_spec = importlib.import_module(f"{self.data_config.data.paths.datapipeline_spec}")
+        self.feature_pipeline = feature_spec.pipelines(self.data_config) 
+
+    def initialize_config(overrides,version_base=None, config_path="../config"):
+        initialize(version_base=version_base, config_path=config_path)
+        dc=compose(overrides= overrides)
+        return dc
+
+    def run_pipeline(self,pipe_list,df,pipeinfo_loc,data_loc,pipeline_save_loc,load_previous = True):
+        pipe_list_save = [col for col in pipe_list]
+        if load_previous:
+            try:
+                with open(pipeinfo_loc, 'rb') as handle:
+                    pipe_list = pickle.load(handle)
+                logging.info(f"Previous pipeline loaded from location {pipeinfo_loc}. Length of pipeline is {len(pipe_list)}")
+                df = pd.read_csv(data_loc,parse_dates=True,index_col='Unnamed: 0')
+                logging.info(f"Previous data loaded from location {data_loc}. Shape of the data is {df.shape}")
+            except Exception as e1:
+                logging.info(f"File {pipeinfo_loc} is not loaded because of error : {e1}")
+        for i, pipe in enumerate(pipe_list,1):
+            logging.info('#'*100)
+            logging.info(f"Pipeline {i} started. Shape of the data is {df.shape}")
+            logging.info(pipe)
+            df = pipe.fit_transform(df)
+            pipe_list_save.remove(pipe)
+            df.to_csv(data_loc)
+            with open(pipeinfo_loc, 'wb') as handle:
+                pickle.dump(pipe_list_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            with open(pipeline_save_loc, 'wb') as handle:
+                pickle.dump(pipe, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            logging.info(f"Pipeline {i} completed. Shape of the data is {df.shape}")
+
+    def execute_pipeline(self,feature_spec):
+        self.feature_pipeline.pipeline_definitions()
+        all_func = self.data_config._content['data']['datapipeline']
+        for datapipeline,subdatapipeline in self.data_config.data.datapipeline.items():
+            if datapipeline in all_func:
+                all_pipe = [self.feature_pipeline.__dict__[pipe] for pipe in subdatapipeline if pipe in self.feature_pipeline.__dict__.keys()]
+                if len(all_pipe)>0:
+                    print(all_pipe)
+                    print(f"{self.data_config.data.paths.base_data_loc}{datapipeline}.pkl")
+                    print(f"{self.data_config.data.paths.base_data_loc}{datapipeline}.csv")
+                    self.run_pipeline(all_pipe,self.base_df,f"{self.data_config.data.paths.base_data_loc}{datapipeline}.pkl",f"{self.data_config.data.paths.base_data_loc}{datapipeline}.csv",f"{self.data_config.data.paths.base_data_loc}saved_{datapipeline}.pkl",load_previous=False)
 
 def nullcolumns(df):
     t = pd.DataFrame(df[df.columns[df.isnull().any()]].isnull().sum()).reset_index()
