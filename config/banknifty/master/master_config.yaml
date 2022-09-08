@@ -1,0 +1,5 @@
+master:
+  data:
+    overrides: ["+data=data_exp"]
+    version_base: None 
+    config_path: "../config/banknifty/"

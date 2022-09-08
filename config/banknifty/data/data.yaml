@@ -8,7 +8,7 @@ paths:
   train_save_path: "${data.paths.base_data_loc}train.csv"
   test_save_path: "${data.paths.base_data_loc}test.csv"
   valid_save_path: "${data.paths.base_data_loc}valid.csv"
-  datapipeline: data.data_pipelines_new
+  datapipeline_spec: data.data_pipelines_new
   
 data_split:
   stratify_col: 'label_-15_1min_close'
