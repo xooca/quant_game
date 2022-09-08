@@ -85,7 +85,7 @@ class execute_data_pipeline:
                 pickle.dump(pipe, handle, protocol=pickle.HIGHEST_PROTOCOL)
             logging.info(f"Pipeline {i} completed. Shape of the data is {df.shape}")
 
-    def execute_pipeline(self,feature_spec):
+    def execute_pipeline(self):
         self.feature_pipeline.pipeline_definitions()
         all_func = self.data_config._content['data']['datapipeline']
         for datapipeline,subdatapipeline in self.data_config.data.datapipeline.items():
