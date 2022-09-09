@@ -1,6 +1,6 @@
 paths:
   ticker_name: 'banknifty'
-  data_create_date: '2022-09-03'
+  data_create_date: '2022-09-07'
   data_files: "/content/gdrive/MyDrive/Work/trading/data_files/"
   base_data_loc: "${data.paths.data_files}${data.paths.ticker_name}/${data.paths.data_create_date}/"
   input_path: "/content/gdrive/MyDrive/Work/trading/data_files/banknifty/input/banknifty.csv"
@@ -9,6 +9,9 @@ paths:
   test_save_path: "${data.paths.base_data_loc}test.csv"
   valid_save_path: "${data.paths.base_data_loc}valid.csv"
   datapipeline_spec: data.feature_specs.feature_spec_v2
+
+generic:
+  verbose_type: print
 
 data_split:
   stratify_col: 'label_-15_1min_close'
@@ -35,9 +38,9 @@ datapipeline:
   pipeline5_exclude_cols: ${data.common.ohlc_column}
 
 common:
-  read_start_date: '2011-01-01'
+  read_start_date: '2021-11-01'
   read_end_date: None
-  save_start_date: '2011-02-01'
+  save_start_date: '2021-12-01'
   save_end_date: None
   ohlc_column: ['close','open','high','low']
   selected_columns: ['close','open','high','low']

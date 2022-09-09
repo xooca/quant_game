@@ -1,4 +1,4 @@
 data:
-  overrides: ["+data=data_exp"]
+  overrides: ["+data=data_test"]
   version_base: None 
   config_path: "../config/banknifty/"

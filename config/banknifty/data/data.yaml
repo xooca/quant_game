@@ -9,6 +9,9 @@ paths:
   test_save_path: "${data.paths.base_data_loc}test.csv"
   valid_save_path: "${data.paths.base_data_loc}valid.csv"
   datapipeline_spec: data.data_pipelines_new
+
+generic:
+  verbose_type: print
   
 data_split:
   stratify_col: 'label_-15_1min_close'
