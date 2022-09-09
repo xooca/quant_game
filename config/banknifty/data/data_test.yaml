@@ -9,9 +9,11 @@ paths:
   test_save_path: "${data.paths.base_data_loc}test.csv"
   valid_save_path: "${data.paths.base_data_loc}valid.csv"
   datapipeline_spec: data.feature_specs.feature_spec_v2
+  predict_data_path: None
 
 generic:
   verbose_type: print
+  data_prefix: predict
 
 data_split:
   stratify_col: 'label_-15_1min_close'

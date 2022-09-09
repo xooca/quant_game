@@ -12,7 +12,8 @@ paths:
 
 generic:
   verbose_type: print
-  
+  data_prefix: predict
+
 data_split:
   stratify_col: 'label_-15_1min_close'
   test_percent: 0.3

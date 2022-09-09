@@ -828,18 +828,21 @@ class FilterData(BaseEstimator, TransformerMixin):
     def transform(self, df):
         print_log('*'*100)
         df = df.sort_index()
+        print_log(f"Value of start_date is {self.start_date}") 
+        print_log(f"Value of end_date is {self.end_date}") 
+        print_log(f"Value of filter_rows is {self.filter_rows}")
         if self.verbose:
             print_log(f"Shape of dataframe before FilterData is {df.shape}") 
-        if self.start_date is not None and self.end_date is None:
+        if self.start_date != 'None' and self.end_date == 'None':
             df = df.sort_index().loc[self.start_date:]
             print_log(f"Data filtered with {self.start_date}") 
-        elif self.start_date is None and self.end_date is not None:
+        elif self.start_date == 'None' and self.end_date != 'None':
             df = df.sort_index().loc[:self.end_date]
             print_log(f"Data filtered with {self.end_date}") 
         else:
             df = df.sort_index()
             print_log(f"No filtering done") 
-        if self.filter_rows is not None:
+        if self.filter_rows != 'None':
             df = df[:self.filter_rows]
             print_log(f"Data filtered with filter rows {self.filter_rows}") 
         if self.verbose:
