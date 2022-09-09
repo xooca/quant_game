@@ -1,6 +1,6 @@
 paths:
   ticker_name: 'banknifty'
-  data_create_date: '2022-09-02'
+  data_create_date: '2022-09-03'
   data_files: "/content/gdrive/MyDrive/Work/trading/data_files/"
   base_data_loc: "${data.paths.data_files}${data.paths.ticker_name}/${data.paths.data_create_date}/"
   input_path: "/content/gdrive/MyDrive/Work/trading/data_files/banknifty/input/banknifty.csv"

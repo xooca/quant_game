@@ -15,6 +15,7 @@ import lightgbm as lgb
 from sklearn.preprocessing import MinMaxScaler
 import warnings
 import importlib
+from sklearn.model_selection import train_test_split
 
 warnings.filterwarnings('ignore')
 
@@ -51,15 +52,11 @@ def initialize_config(overrides,version_base=None, config_path="../config"):
     dc=compose(overrides= overrides)
     return dc
 class execute_data_pipeline:
-    def __init__(self,master_config):
-        self.data_config = self.initialize_config(**master_config)
+    def __init__(self,master_config,load_previous=False):
+        self.data_config = initialize_config(**master_config)
         feature_spec = importlib.import_module(f"{self.data_config.data.paths.datapipeline_spec}")
         self.feature_pipeline = feature_spec.pipelines(self.data_config) 
-
-    def initialize_config(overrides,version_base=None, config_path="../config"):
-        initialize(version_base=version_base, config_path=config_path)
-        dc=compose(overrides= overrides)
-        return dc
+        self.load_previous=load_previous
 
     def run_pipeline(self,pipe_list,df,pipeinfo_loc,data_loc,pipeline_save_loc,load_previous = True):
         pipe_list_save = [col for col in pipe_list]
@@ -95,7 +92,41 @@ class execute_data_pipeline:
                     print(all_pipe)
                     print(f"{self.data_config.data.paths.base_data_loc}{datapipeline}.pkl")
                     print(f"{self.data_config.data.paths.base_data_loc}{datapipeline}.csv")
-                    self.run_pipeline(all_pipe,self.base_df,f"{self.data_config.data.paths.base_data_loc}{datapipeline}.pkl",f"{self.data_config.data.paths.base_data_loc}{datapipeline}.csv",f"{self.data_config.data.paths.base_data_loc}saved_{datapipeline}.pkl",load_previous=False)
+                    self.run_pipeline(all_pipe,self.base_df,f"{self.data_config.data.paths.base_data_loc}{datapipeline}.pkl",f"{self.data_config.data.paths.base_data_loc}{datapipeline}.csv",f"{self.data_config.data.paths.base_data_loc}saved_{datapipeline}.pkl",load_previous=self.load_previous)
+
+    def merge_pipeline(self):
+        master_pipeline_path = f"{self.data_config.data.paths.base_data_loc}{self.data_config.data.datapipeline.master_pipeline}.csv"
+        master_df = pd.read_csv(master_pipeline_path,parse_dates=True,index_col='Unnamed: 0')
+        master_df_col = [col for col in master_df.columns.tolist() if col not in self.data_config.data.datapipeline.pipeline1_exclude_cols]
+        master_df = master_df[master_df_col]
+        for pipeline in self.data_config.data.datapipeline.merge_pipeline_to_master:
+            tmppath = f"{self.data_config.data.paths.base_data_loc}{pipeline}.csv"
+            print(tmppath)
+            tmp_exclude_cols = self.data_config.data.datapipeline[f"{pipeline}_exclude_cols"]
+            tmpdf = pd.read_csv(tmppath,parse_dates=True,index_col='Unnamed: 0')
+            tmp_cols = [col for col in tmpdf.columns.tolist() if col not in tmp_exclude_cols]
+            tmpdf = tmpdf[tmp_cols]
+            master_df = pd.merge(master_df,tmpdf, how='inner', left_index=True, right_index=True)
+
+        if self.data_config.data.data_split.test_percent is None:
+            test_size = 0.2
+        else:
+            test_size = self.data_config.data.data_split.test_percent
+
+        if self.data_config.data.data_split.stratify_col is not None:
+            train, test = train_test_split(master_df, test_size=test_size,stratify=master_df[self.data_config.data.data_split.stratify_col])
+            test.to_csv(self.data_config.data.paths.test_save_path)
+            if self.data_config.data.data_split.valid_percent is not None:
+                train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent,stratify=train[self.data_config.data.data_split.stratify_col])
+                train.to_csv(self.data_config.data.paths.train_save_path)
+                valid.to_csv(self.data_config.data.paths.valid_save_path)
+        else:
+            train, test = train_test_split(master_df, test_size=test_size)
+            test.to_csv(self.data_config.data.paths.test_save_path)
+            if self.data_config.data.data_split.valid_percent is not None:
+                train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent)
+                train.to_csv(self.data_config.data.paths.train_save_path)
+                valid.to_csv(self.data_config.data.paths.valid_save_path)
 
 def nullcolumns(df):
     t = pd.DataFrame(df[df.columns[df.isnull().any()]].isnull().sum()).reset_index()
