@@ -77,36 +77,7 @@ class execute_data_pipeline:
         self.data_prefix = self.data_config.data.generic.data_prefix
         self.predict_data_path = self.data_config.data.paths.predict_data_path
 
-    def run_pipeline_simple(self,pipe_list,name_pipe_list,df,pipe_location,datapipeline,load_previous = True):
-        pipe_data_location = f"{pipe_location}{datapipeline}.csv"
 
-        for pipe_name, pipe in zip(name_pipe_list,pipe_list):
-            print_log(f"*************************** pipe {pipe_name} started.**********************************",self.using_print)
-            print_log(f"Pipe {pipe_name} started. Shape of the data is {df.shape}",self.using_print)
-            print_log(f"Below is the descripton of pipe",self.using_print)
-            print_log(f"{pipe}",self.using_print)
-            print_log(pipe,self.using_print)
-
-            pipe_dir = f"{pipe_location}saved_pipeline/{datapipeline}"
-            pipe_file = f"{pipe_dir}/pipe_{pipe_name}.pkl"
-
-            if load_previous:
-                if os.path.exists(pipe_file):
-                    print_log(f"{pipe_file} already exists. skipping {pipe_name}",self.using_print)
-                    continue
-                else:
-                    df = pd.read_csv(pipe_data_location,parse_dates=True,index_col='Unnamed: 0')
-            check_and_create_dir(pipe_dir)
-            df = pipe.fit_transform(df)
-            df.to_csv(pipe_data_location)
-
-            del df
-
-            with open(pipe_file, 'wb') as handle:
-                pickle.dump(pipe, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                print_log(f"{pipe_file} saved",self.using_print)
-            print_log(f"pipe {pipe_name} completed. Save at location {pipe_file}",self.using_print)
-            print_log(f"After completion of pipe {pipe_name}, shape of the data is {df.shape}",self.using_print)
 
     def run_pipeline(self,pipe_list,name_pipe_list,df,pipe_location,datapipeline,load_previous = True):
         remaining_pipe_location = f"{pipe_location}{datapipeline}_remaining.pkl"
@@ -200,6 +171,39 @@ class execute_data_pipeline:
                 pickle.dump(final_pipeline, handle, protocol=pickle.HIGHEST_PROTOCOL)
             print_log(f"*************************** Pipeline {datapipeline} completed.**********************************",self.using_print)
 
+
+    def run_pipeline_simple(self,pipe_list,name_pipe_list,df,pipe_location,datapipeline,load_previous = True):
+        pipe_data_location = f"{pipe_location}{datapipeline}.csv"
+
+        for pipe_name, pipe in zip(name_pipe_list,pipe_list):
+            print_log(f"*************************** pipe {pipe_name} started.**********************************",self.using_print)
+            print_log(f"Pipe {pipe_name} started. Shape of the data is {df.shape}",self.using_print)
+            print_log(f"Below is the descripton of pipe",self.using_print)
+            print_log(f"{pipe}",self.using_print)
+            print_log(pipe,self.using_print)
+
+            pipe_dir = f"{pipe_location}saved_pipeline/{datapipeline}"
+            pipe_file = f"{pipe_dir}/pipe_{pipe_name}.pkl"
+
+            if load_previous:
+                if os.path.exists(pipe_file):
+                    print_log(f"{pipe_file} already exists. skipping {pipe_name}",self.using_print)
+                    continue
+                else:
+                    df = pd.read_csv(pipe_data_location,parse_dates=True,index_col='Unnamed: 0')
+                    load_previous = False
+            check_and_create_dir(pipe_dir)
+            df = pipe.fit_transform(df)
+            df.to_csv(pipe_data_location)
+            print_log(f"After completion of pipe {pipe_name}, shape of the data is {df.shape}",self.using_print)
+
+            #del df
+
+            with open(pipe_file, 'wb') as handle:
+                pickle.dump(pipe, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                print_log(f"{pipe_file} saved",self.using_print)
+            print_log(f"pipe {pipe_name} completed. Save at location {pipe_file}",self.using_print)
+
     def execute_pipeline_simple(self):
         self.base_df = pd.read_csv(self.data_config.data.paths.input_path)
         self.feature_pipeline.pipeline_definitions()
@@ -207,7 +211,6 @@ class execute_data_pipeline:
         final_pipeline = {}
         all_pipelines = []
         pipelines_dict = dict(self.data_config.data.datapipeline)
-        ran_pipelines_path = f"{self.data_config.data.paths.base_data_loc}datapipeline_current.pkl"
         final_pipeline_path = f"{self.data_config.data.paths.base_data_loc}final_pipeline.pkl"
 
         for datapipeline,subdatapipeline in pipelines_dict.items():
@@ -232,7 +235,6 @@ class execute_data_pipeline:
                     all_pipelines.append(datapipeline)
                     with open(flag_file, 'wb') as handle:
                         pickle.dump(pipe_flag, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                    print_log(f"{ran_pipelines_path} saved",self.using_print)
             final_pipeline.update({datapipeline:subdatapipeline})
             with open(final_pipeline_path, 'wb') as handle:
                 pickle.dump(final_pipeline, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -273,14 +275,14 @@ class execute_data_pipeline:
             self.load_and_run_pipeline(pipe_location,datapipeline,subdatapipeline,prefix=self.data_prefix,input_path = self.predict_data_path)
             
     def merge_pipeline(self):
-        master_pipeline_path = f"{self.data_config.data.paths.base_data_loc}{self.data_config.data.datapipeline.master_pipeline}.csv"
+        master_pipeline_path = f"{self.data_config.data.paths.base_data_loc}{self.data_config.data.datapipeline_details.master_pipeline}.csv"
         master_df = pd.read_csv(master_pipeline_path,parse_dates=True,index_col='Unnamed: 0')
-        master_df_col = [col for col in master_df.columns.tolist() if col not in self.data_config.data.datapipeline.pipeline1_exclude_cols]
+        master_df_col = [col for col in master_df.columns.tolist() if col not in self.data_config.data.datapipeline_details.pipeline1_exclude_cols]
         master_df = master_df[master_df_col]
-        for pipeline in self.data_config.data.datapipeline.merge_pipeline_to_master:
+        for pipeline in self.data_config.data.datapipeline_details.merge_pipeline_to_master:
             tmppath = f"{self.data_config.data.paths.base_data_loc}{pipeline}.csv"
             print_log(tmppath,self.using_print)
-            tmp_exclude_cols = self.data_config.data.datapipeline[f"{pipeline}_exclude_cols"]
+            tmp_exclude_cols = self.data_config.data.datapipeline_details[f"{pipeline}_exclude_cols"]
             tmpdf = pd.read_csv(tmppath,parse_dates=True,index_col='Unnamed: 0')
             tmp_cols = [col for col in tmpdf.columns.tolist() if col not in tmp_exclude_cols]
             tmpdf = tmpdf[tmp_cols]

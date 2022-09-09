@@ -31,6 +31,8 @@ datapipeline:
   pipeline3: [generic_pipeline,zscore_log_percentage_chg_pipe,percentile_transform_pipe,rolling_rank_pipe,save_pipeline]
   pipeline4: [generic_pipeline,bin_transform_pipe, positive_negative_pipe,rolling_stats_pipe,price_range_pipe,save_pipeline]
   pipeline5: [generic_pipeline,label_creator_pipe,save_pipeline]
+  
+datapipeline_details:
   master_pipeline: pipeline1
   merge_pipeline_to_master: [pipeline2,pipeline3,pipeline4,pipeline5]
   pipeline1_exclude_cols: ${data.common.ohlc_column}
