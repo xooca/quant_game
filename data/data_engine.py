@@ -839,6 +839,9 @@ class FilterData(BaseEstimator, TransformerMixin):
         elif self.start_date == 'None' and self.end_date != 'None':
             df = df.sort_index().loc[:self.end_date]
             print_log(f"Data filtered with {self.end_date}") 
+        elif self.start_date != 'None' and self.end_date != 'None':
+            df = df.sort_index().loc[self.start_date:self.end_date]
+            print_log(f"Data filtered with {self.end_date}") 
         else:
             df = df.sort_index()
             print_log(f"No filtering done") 

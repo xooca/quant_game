@@ -24,6 +24,7 @@ colab:
   package_path: '/content/gdrive/MyDrive/Work/colab_packages'
   current_path: '/content/notebook'
 
+initial_pipeline: [generic_pipeline,save_pipeline]
 datapipeline: 
   pipeline1: [generic_pipeline,technical_ind_pre_pipe,technical_indicator_pipe1,technical_indicator_pipe2,technical_indicator_pipe3,save_pipeline]
   pipeline2: [generic_pipeline,rolling_values_pipe,last_tick_greater_values_pipe,save_pipeline]

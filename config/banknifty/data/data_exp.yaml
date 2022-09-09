@@ -1,6 +1,6 @@
 paths:
   ticker_name: 'banknifty'
-  data_create_date: '2022-09-03'
+  data_create_date: '2022-09-07'
   data_files: "/content/gdrive/MyDrive/Work/trading/data_files/"
   base_data_loc: "${data.paths.data_files}${data.paths.ticker_name}/${data.paths.data_create_date}/"
   input_path: "/content/gdrive/MyDrive/Work/trading/data_files/banknifty/input/banknifty.csv"
@@ -9,6 +9,10 @@ paths:
   test_save_path: "${data.paths.base_data_loc}test.csv"
   valid_save_path: "${data.paths.base_data_loc}valid.csv"
   datapipeline_spec: data.feature_specs.feature_spec_v2
+  predict_data_path: None
+  filtered_data_location: "${data.paths.base_data_loc}/read_data/"
+  filtered_data_location_file: "${data.paths.filtered_data_location}${data.paths.ticker_name}.csv"
+  use_filtered_loc_for_input: True
 
 generic:
   verbose_type: print
@@ -19,17 +23,20 @@ data_split:
   test_percent: 0.3
   valid_percent: 0.3
 
+
 colab:
   code_path: '/content/gdrive/MyDrive/Work/trading'
   package_path: '/content/gdrive/MyDrive/Work/colab_packages'
   current_path: '/content/notebook'
 
+initial_pipeline: [generic_pipeline]
+
 datapipeline: 
-  pipeline1: [generic_pipeline,technical_ind_pre_pipe,technical_indicator_pipe1,technical_indicator_pipe2,technical_indicator_pipe3,save_pipeline]
-  pipeline2: [generic_pipeline,rolling_values_pipe,last_tick_greater_values_pipe,save_pipeline]
-  pipeline3: [generic_pipeline,zscore_log_percentage_chg_pipe,percentile_transform_pipe,rolling_rank_pipe,save_pipeline]
-  pipeline4: [generic_pipeline,bin_transform_pipe, positive_negative_pipe,rolling_stats_pipe,price_range_pipe,save_pipeline]
-  pipeline5: [generic_pipeline,label_creator_pipe,save_pipeline]
+  pipeline1: [technical_ind_pre_pipe,technical_indicator_pipe1,technical_indicator_pipe2,technical_indicator_pipe3,save_pipeline]
+  pipeline2: [rolling_values_pipe,last_tick_greater_values_pipe,save_pipeline]
+  pipeline3: [zscore_log_percentage_chg_pipe,percentile_transform_pipe,rolling_rank_pipe,save_pipeline]
+  pipeline4: [bin_transform_pipe, positive_negative_pipe,rolling_stats_pipe,price_range_pipe,save_pipeline]
+  pipeline5: [label_creator_pipe,save_pipeline]
 
 datapipeline_details:
   master_pipeline: pipeline1

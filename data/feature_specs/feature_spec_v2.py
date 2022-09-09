@@ -19,6 +19,11 @@ class pipelines:
         self.TA_PIPE2_EXCLUDE = list(dc.data.common.ta_pipe2_exclude)
     
     def pipeline_definitions(self):
+        self.start_pipeline = Pipeline([
+                            ('nd_gen', de.NormalizeDataset(columns = self.OHLC_COLUMNS)),
+                            ('read_fd', de.FilterData(start_date=self.dc.data.common.read_start_date,end_date=self.dc.data.common.read_end_date)),
+                            ])
+                            
         self.generic_pipeline = Pipeline([
                             ('nd_gen', de.NormalizeDataset(columns = self.OHLC_COLUMNS)),
                             ('read_fd', de.FilterData(start_date=self.dc.data.common.read_start_date,end_date=self.dc.data.common.read_end_date)),

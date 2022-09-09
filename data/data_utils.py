@@ -76,8 +76,7 @@ class execute_data_pipeline:
         self.load_previous=load_previous
         self.data_prefix = self.data_config.data.generic.data_prefix
         self.predict_data_path = self.data_config.data.paths.predict_data_path
-
-
+        self.base_df = pd.DataFrame()
 
     def run_pipeline(self,pipe_list,name_pipe_list,df,pipe_location,datapipeline,load_previous = True):
         remaining_pipe_location = f"{pipe_location}{datapipeline}_remaining.pkl"
@@ -135,7 +134,8 @@ class execute_data_pipeline:
             print_log(f"After completion of pipe {pipe_name}, shape of the data is {df.shape}",self.using_print)
 
     def execute_pipeline(self):
-        self.base_df = pd.read_csv(self.data_config.data.paths.input_path)
+        if self.base_df.shape[0] > 0 and self.data_config.data.paths.use_filtered_loc_for_input:
+            self.base_df = pd.read_csv(self.data_config.data.paths.input_path)
         self.feature_pipeline.pipeline_definitions()
         all_func = self.data_config._content['data']['datapipeline']
         final_pipeline = {}
@@ -171,7 +171,6 @@ class execute_data_pipeline:
                 pickle.dump(final_pipeline, handle, protocol=pickle.HIGHEST_PROTOCOL)
             print_log(f"*************************** Pipeline {datapipeline} completed.**********************************",self.using_print)
 
-
     def run_pipeline_simple(self,pipe_list,name_pipe_list,df,pipe_location,datapipeline,load_previous = True):
         pipe_data_location = f"{pipe_location}{datapipeline}.csv"
 
@@ -191,7 +190,7 @@ class execute_data_pipeline:
                     continue
                 else:
                     df = pd.read_csv(pipe_data_location,parse_dates=True,index_col='Unnamed: 0')
-                    load_previous = False
+                    self.load_previous = False
             check_and_create_dir(pipe_dir)
             df = pipe.fit_transform(df)
             df.to_csv(pipe_data_location)
@@ -204,8 +203,28 @@ class execute_data_pipeline:
                 print_log(f"{pipe_file} saved",self.using_print)
             print_log(f"pipe {pipe_name} completed. Save at location {pipe_file}",self.using_print)
 
-    def execute_pipeline_simple(self):
+    def run_initial_pipeline(self):
         self.base_df = pd.read_csv(self.data_config.data.paths.input_path)
+        self.feature_pipeline.pipeline_definitions()
+        inital_pipelines = self.data_config.data.initial_pipeline
+        inital_pipelines = [self.feature_pipeline.__dict__[pipe] for pipe in inital_pipelines if pipe in self.feature_pipeline.__dict__.keys()]
+        if len(inital_pipelines)>0:
+            check_and_create_dir(self.data_config.data.paths.filtered_data_location)
+            for inital_pipeline in inital_pipelines:
+                self.base_df = inital_pipeline.fit_transform(self.base_df)
+        self.base_df.to_csv(self.data_config.data.paths.filtered_data_location_file)
+
+    def execute_pipeline_simple(self):
+        if self.data_config.data.paths.use_filtered_loc_for_input:
+            
+            self.base_df = pd.read_csv(self.data_config.data.paths.filtered_data_location_file,parse_dates=True,index_col='Unnamed: 0')
+            print_log(f"Data reloaded from location : {self.data_config.data.paths.filtered_data_location_file}",self.using_print)
+            if len(self.base_df) == 0:
+                print_log(f"Shape of data is 0, Therefore reloading data from {self.data_config.data.paths.input_path}",self.using_print)
+                self.base_df = pd.read_csv(self.data_config.data.paths.input_path)
+        else:
+            self.base_df = pd.read_csv(self.data_config.data.paths.input_path)
+        print_log(f"Shape of data is {self.base_df.shape}",self.using_print)
         self.feature_pipeline.pipeline_definitions()
         all_func = self.data_config._content['data']['datapipeline']
         final_pipeline = {}
@@ -236,15 +255,19 @@ class execute_data_pipeline:
                     with open(flag_file, 'wb') as handle:
                         pickle.dump(pipe_flag, handle, protocol=pickle.HIGHEST_PROTOCOL)
             final_pipeline.update({datapipeline:subdatapipeline})
-            with open(final_pipeline_path, 'wb') as handle:
-                pickle.dump(final_pipeline, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
             print_log(f"*************************** Pipeline {datapipeline} completed.**********************************",self.using_print)
+        with open(final_pipeline_path, 'wb') as handle:
+            pickle.dump(final_pipeline, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        print_log(f"Final pipeline saved to {final_pipeline_path}",self.using_print)
+        print_log(f"*************************** PIPELINE EXECUTION COMPLETED**********************************",self.using_print)
 
     def load_and_run_pipeline(self,pipe_location,datapipeline,subdatapipeline,prefix='None',input_path = 'None'):
         if prefix == 'None':
             base_location = f"{pipe_location}"
         else:
             base_location = f"{pipe_location}{prefix}/"
+            check_and_create_dir(base_location)
 
         pipe_data_location = f"{base_location}{datapipeline}.csv"
         if input_path == 'None':
@@ -262,51 +285,80 @@ class execute_data_pipeline:
             df = pipe.transform(df)
             df.to_csv(pipe_data_location)
             print_log(f"Data saved at location {pipe_data_location}",self.using_print)
-            del df
+            #del df
 
     def load_and_execute_pipeline(self):
         pipe_location = f"{self.data_config.data.paths.base_data_loc}"
-        
+        if self.data_config.data.paths.use_filtered_loc_for_input:
+            self.base_df = pd.read_csv(self.data_config.data.paths.filtered_data_location_file,parse_dates=True,index_col='Unnamed: 0')
+            print_log(f"Data reloaded from location : {self.data_config.data.paths.filtered_data_location_file}",self.using_print)
+            if len(self.base_df) == 0:
+                print_log(f"Shape of data is 0, Therefore reloading data from {self.data_config.data.paths.input_path}",self.using_print)
+                self.base_df = pd.read_csv(self.data_config.data.paths.input_path)
+        else:
+            self.base_df = pd.read_csv(self.data_config.data.paths.input_path)
         final_pipeline_path = f"{pipe_location}final_pipeline.pkl"
         with open(final_pipeline_path, 'rb') as handle:
             pipelines_dict = pickle.load(handle)
-            
+        print_log(f"Below is the description of full pipeline :",self.using_print)
+        print_log(f"{pipelines_dict}",self.using_print)
         for datapipeline,subdatapipeline in pipelines_dict.items():
             self.load_and_run_pipeline(pipe_location,datapipeline,subdatapipeline,prefix=self.data_prefix,input_path = self.predict_data_path)
             
-    def merge_pipeline(self):
+    def merge_pipeline(self,split_flag=True):
+        prefix = self.data_config.data.generic.data_prefix
+        if prefix == 'None':
+            base_location = f"{self.data_config.data.paths.base_data_loc}"
+        else:
+            base_location = f"{self.data_config.data.paths.base_data_loc}{prefix}/"
+            check_and_create_dir(base_location)
+            
         master_pipeline_path = f"{self.data_config.data.paths.base_data_loc}{self.data_config.data.datapipeline_details.master_pipeline}.csv"
+        print_log(f"Started reading master data from path : {master_pipeline_path}",self.using_print)
         master_df = pd.read_csv(master_pipeline_path,parse_dates=True,index_col='Unnamed: 0')
+        print_log(f"Completed reading master data from path : {master_pipeline_path}",self.using_print)
         master_df_col = [col for col in master_df.columns.tolist() if col not in self.data_config.data.datapipeline_details.pipeline1_exclude_cols]
+        print_log(f"Columns excluded : {self.data_config.data.datapipeline_details.pipeline1_exclude_cols}",self.using_print)
+        
         master_df = master_df[master_df_col]
         for pipeline in self.data_config.data.datapipeline_details.merge_pipeline_to_master:
             tmppath = f"{self.data_config.data.paths.base_data_loc}{pipeline}.csv"
-            print_log(tmppath,self.using_print)
             tmp_exclude_cols = self.data_config.data.datapipeline_details[f"{pipeline}_exclude_cols"]
+            print_log(f"Started reading data from path : {tmppath}",self.using_print)
             tmpdf = pd.read_csv(tmppath,parse_dates=True,index_col='Unnamed: 0')
+            print_log(f"Data read from path : {tmppath}",self.using_print)
             tmp_cols = [col for col in tmpdf.columns.tolist() if col not in tmp_exclude_cols]
             tmpdf = tmpdf[tmp_cols]
             master_df = pd.merge(master_df,tmpdf, how='inner', left_index=True, right_index=True)
 
-        if self.data_config.data.data_split.test_percent is None:
-            test_size = 0.2
-        else:
-            test_size = self.data_config.data.data_split.test_percent
-
-        if self.data_config.data.data_split.stratify_col is not None:
-            train, test = train_test_split(master_df, test_size=test_size,stratify=master_df[self.data_config.data.data_split.stratify_col])
-            test.to_csv(self.data_config.data.paths.test_save_path)
-            if self.data_config.data.data_split.valid_percent is not None:
-                train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent,stratify=train[self.data_config.data.data_split.stratify_col])
-                train.to_csv(self.data_config.data.paths.train_save_path)
-                valid.to_csv(self.data_config.data.paths.valid_save_path)
-        else:
-            train, test = train_test_split(master_df, test_size=test_size)
-            test.to_csv(self.data_config.data.paths.test_save_path)
-            if self.data_config.data.data_split.valid_percent is not None:
-                train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent)
-                train.to_csv(self.data_config.data.paths.train_save_path)
-                valid.to_csv(self.data_config.data.paths.valid_save_path)
+        if split_flag:
+            print_log(f"Started splitting data into train, test and validation",self.using_print)
+            if self.data_config.data.data_split.test_percent is None:
+                test_size = 0.2
+            else:
+                test_size = self.data_config.data.data_split.test_percent
+            print_log(f"Test split size is {test_size}",self.using_print)
+            if self.data_config.data.data_split.stratify_col is not None:
+                print_log(f"Stratify column is {self.data_config.data.data_split.stratify_col}",self.using_print)
+                train, test = train_test_split(master_df, test_size=test_size,stratify=master_df[self.data_config.data.data_split.stratify_col])
+                test.to_csv(self.data_config.data.paths.test_save_path)
+                print_log(f"Test data saved at location {self.data_config.data.paths.test_save_path}",self.using_print)
+                if self.data_config.data.data_split.valid_percent is not None:
+                    print_log(f"Valid split size is {self.data_config.data.data_split.valid_percent}",self.using_print)
+                    train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent,stratify=train[self.data_config.data.data_split.stratify_col])
+                    train.to_csv(self.data_config.data.paths.train_save_path)
+                    print_log(f"Train data saved at location {self.data_config.data.paths.train_save_path}",self.using_print)
+                    valid.to_csv(self.data_config.data.paths.valid_save_path)
+                    print_log(f"Validation data saved at location {self.data_config.data.paths.valid_save_path}",self.using_print)
+            else:
+                train, test = train_test_split(master_df, test_size=test_size)
+                test.to_csv(self.data_config.data.paths.test_save_path)
+                if self.data_config.data.data_split.valid_percent is not None:
+                    train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent)
+                    train.to_csv(self.data_config.data.paths.train_save_path)
+                    print_log(f"Train data saved at location {self.data_config.data.paths.train_save_path}",self.using_print)
+                    valid.to_csv(self.data_config.data.paths.valid_save_path)
+                    print_log(f"Validation data saved at location {self.data_config.data.paths.valid_save_path}",self.using_print)
 
 def nullcolumns(df):
     t = pd.DataFrame(df[df.columns[df.isnull().any()]].isnull().sum()).reset_index()
