@@ -312,8 +312,8 @@ class execute_data_pipeline:
         else:
             base_location = f"{self.data_config.data.paths.base_data_loc}{prefix}/"
             check_and_create_dir(base_location)
-            
-        master_pipeline_path = f"{self.data_config.data.paths.base_data_loc}{self.data_config.data.datapipeline_details.master_pipeline}.csv"
+        check_and_create_dir(self.data_config.data.paths.final_data_path)
+        master_pipeline_path = f"{base_location}{self.data_config.data.datapipeline_details.master_pipeline}.csv"
         print_log(f"Started reading master data from path : {master_pipeline_path}",self.using_print)
         master_df = pd.read_csv(master_pipeline_path,parse_dates=True,index_col='Unnamed: 0')
         print_log(f"Completed reading master data from path : {master_pipeline_path}",self.using_print)
@@ -322,7 +322,7 @@ class execute_data_pipeline:
         
         master_df = master_df[master_df_col]
         for pipeline in self.data_config.data.datapipeline_details.merge_pipeline_to_master:
-            tmppath = f"{self.data_config.data.paths.base_data_loc}{pipeline}.csv"
+            tmppath = f"{base_location}{pipeline}.csv"
             tmp_exclude_cols = self.data_config.data.datapipeline_details[f"{pipeline}_exclude_cols"]
             print_log(f"Started reading data from path : {tmppath}",self.using_print)
             tmpdf = pd.read_csv(tmppath,parse_dates=True,index_col='Unnamed: 0')
