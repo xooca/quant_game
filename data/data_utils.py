@@ -17,36 +17,13 @@ from sklearn.preprocessing import MinMaxScaler
 import warnings
 import importlib
 from sklearn.model_selection import train_test_split
+import zipfile,fnmatch,os
+from pathlib import Path
 
 warnings.filterwarnings('ignore')
 
 os.getcwd()
 pd.options.display.max_columns = None
-
-def run_pipeline(pipe_list,df,pipeinfo_loc,data_loc,pipeline_save_loc,load_previous = True):
-    pipe_list_save = [col for col in pipe_list]
-    if load_previous:
-        try:
-            with open(pipeinfo_loc, 'rb') as handle:
-                pipe_list = pickle.load(handle)
-            logging.info(f"Previous pipeline loaded from location {pipeinfo_loc}. Length of pipeline is {len(pipe_list)}")
-            df = pd.read_csv(data_loc,parse_dates=True,index_col='Unnamed: 0')
-            logging.info(f"Previous data loaded from location {data_loc}. Shape of the data is {df.shape}")
-        except Exception as e1:
-            logging.info(f"File {pipeinfo_loc} is not loaded because of error : {e1}")
-    for i, pipe in enumerate(pipe_list,1):
-        logging.info('#'*100)
-        logging.info(f"Pipeline {i} started. Shape of the data is {df.shape}")
-        logging.info(pipe)
-        df = pipe.fit_transform(df)
-        pipe_list_save.remove(pipe)
-        df.to_csv(data_loc)
-        with open(pipeinfo_loc, 'wb') as handle:
-            pickle.dump(pipe_list_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(pipeline_save_loc, 'wb') as handle:
-            pickle.dump(pipe, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        logging.info(f"Pipeline {i} completed. Shape of the data is {df.shape}")
-    return df
 
 def initialize_config(overrides,version_base=None, config_path="../config"):
     initialize(config_path=config_path)
@@ -62,6 +39,114 @@ def print_log(log,using_print=True):
 def check_and_create_dir(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
+
+def convert_df_to_timeseries(df):
+    df['date_time'] = df['date'].astype(str) + ' ' + df['time']
+    df = df.sort_values(by='date_time')
+    df.index = df['date_time']
+    df = df[['open','high','low','close']]
+    return df
+
+class initial_data_setup:
+    def __init__(self,master_config):
+        master_config = dict(master_config['master']['data'])
+        hydra.core.global_hydra.GlobalHydra.instance().clear()
+        self.data_config = initialize_config(**master_config)
+        self.root_path = self.data_config.data.raw_data.raw_data_input_path
+        self.zip_file_pattern = self.data_config.data.raw_data.zip_file_pattern
+        self.data_pattern = self.data_config.data.raw_data.data_pattern
+        self.using_print = True if self.data_config.data.generic.verbose_type == 'print' else False
+        self.input_path = self.data_config.data.raw_data.raw_data_save_path
+        self.initial_columns = self.data_config.data.raw_data.initial_columns
+        self.source_data = self.data_config.data.raw_data.source_data
+        self.raw_data_save_path = self.data_config.data.raw_data.raw_data_save_path
+        self.ohlc_column = self.data_config.data.common.ohlc_column
+
+    def unzip_folders(self):
+        for root, dirs, files in os.walk(self.root_path):
+            for filename in fnmatch.filter(files, self.zip_file_pattern):
+                #print(os.path.join(root, filename))
+                f_name = os.path.join(root, filename)
+                try:
+                    if zipfile.is_zipfile(f_name):
+                        n_file = os.path.join(root, os.path.splitext(filename)[0])
+                        zipfile.ZipFile(f_name).extractall(n_file)
+                        print_log(f"File saved at location {n_file}",self.using_print)
+                        os.remove(f_name)
+                        print_log(f"File {f_name} removed",self.using_print)
+                    else:
+                        print_log(f"File {f_name} is not unzipped",self.using_print)
+                except Exception as e1:
+                    print_log(f"File {f_name} is not unzipped",self.using_print)
+                    print_log(f"Error encountered is {e1}",self.using_print)
+
+    def create_dataset(self,reload = False):
+        files_list = []
+        bad_files = []
+        files_processed = []
+        base_df = pd.DataFrame(columns = self.initial_columns)
+        if not os.path.exists(self.source_data):
+            os.makedirs(self.source_data)
+            print_log(f'Created folder {self.source_data}',self.using_print)
+
+        already_loaded_file_name = f'{self.source_data}/already_loaded_files.pickle'
+        print_log(f'Data save path is { self.raw_data_save_path}')
+        print_log(f'File with already loaded files is {already_loaded_file_name}')
+        try:
+            with open(already_loaded_file_name, 'rb') as handle:
+                already_loaded_files = pickle.load(handle)
+                already_loaded_files = [Path(col) for col in already_loaded_files]
+                print_log(f"Total files already saved {len(already_loaded_files)}",self.using_print)
+        except Exception as e1:
+            print_log(f"File {already_loaded_file_name} is not loaded because of error : {e1}",self.using_print)
+            already_loaded_files = []
+        for root, dirs, files in os.walk(self.root_path):
+            for filename in fnmatch.filter(files, self.data_pattern):
+                f_name = Path(os.path.join(root, filename))
+                files_list.append(f_name)
+        files_to_be_loaded = [f for f in files_list if f not in already_loaded_files]
+        files_to_be_loaded = list(dict.fromkeys(files_to_be_loaded))
+        files_list = list(dict.fromkeys(files_list))
+        print_log(f"Total files detected {len(files_list)}",self.using_print)
+        print_log(f"Total new files detected {len(files_to_be_loaded)}",self.using_print)
+        try:
+            base_df = pd.read_csv(self.raw_data_save_path)
+        except Exception as e1:
+            print_log(f"Error while loading dataframe from { self.raw_data_save_path} because of error : {e1}")
+            base_df = pd.DataFrame(columns = self.ohlc_column)
+            files_to_be_loaded = files_list
+        if len(base_df) == 0 or reload:
+            files_to_be_loaded = files_list
+            print_log(f"We are going to reload all the data",self.using_print)
+
+        print_log(f"Number of files to be loaded {len(files_to_be_loaded)}",self.using_print)
+        base_df_st_shape = base_df.shape
+        for i,f_name in enumerate(files_to_be_loaded,1):
+            f_name = os.path.join(root, f_name)
+            try:
+                tmp_df = pd.read_csv(f_name,header=None)
+                tmp_df = tmp_df.loc[:,0:6]
+                tmp_df.columns = self.initial_columns
+                tmp_df = convert_df_to_timeseries(tmp_df)
+                base_df = pd.concat([base_df,tmp_df],axis=0)
+                print_log(len(files_to_be_loaded)-i,self.using_print)
+                print_log(base_df.shape,self.using_print)
+                print_log(f_name,self.using_print)
+                already_loaded_files.append(f_name)
+            except Exception as e1:
+                bad_files.append(f_name)
+                print_log(f"File {f_name} is not loaded because of error : {e1}",self.using_print)
+        with open(already_loaded_file_name, 'wb') as handle:
+            pickle.dump(already_loaded_files, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        print_log(f"Shape of the dataframe before duplicate drop is {base_df.shape}",self.using_print)
+        base_df = base_df.drop_duplicates()
+        print_log(f"Shape of the dataframe after duplicate drop is {base_df.shape}",self.using_print)
+        if base_df_st_shape != base_df.shape:
+            base_df = base_df.sort_index()
+            base_df.to_csv( self.raw_data_save_path, index_label=False )
+            print_log(f"Saving dataframe to location { self.raw_data_save_path}",self.using_print)
+        return base_df
+
 class execute_data_pipeline:
     def __init__(self,master_config,load_previous=False):
         master_config = dict(master_config['master']['data'])
@@ -153,7 +238,7 @@ class execute_data_pipeline:
             except Exception as e1:
                 print_log(f"File {ran_pipelines_path} is not loaded because of error : {e1}",self.using_print)
         for datapipeline,subdatapipeline in pipelines_dict.items():
-            print_log(f"*************************** Pipeline {datapipeline} started.**********************************",self.using_print)
+            print_log(f"*************************** Pipelinesure {datapipeline} started.**********************************",self.using_print)
             if datapipeline in all_func:
                 all_pipe = [self.feature_pipeline.__dict__[pipe] for pipe in subdatapipeline if pipe in self.feature_pipeline.__dict__.keys()]
                 name_pipe_list = [pipe for pipe in subdatapipeline if pipe in self.feature_pipeline.__dict__.keys()]

@@ -16,7 +16,7 @@ generic:
   data_prefix: predict
 
 data_split:
-  stratify_col: 'label_-15_1min_close'
+  stratify_col: 'label_-30_1min_close'
   test_percent: 0.3
   valid_percent: 0.3
 
