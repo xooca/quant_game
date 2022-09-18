@@ -59,7 +59,7 @@ def save_object(object_path,obj):
         print_log(f"Object saved at location {object_path}")
 class initial_data_setup:
     def __init__(self,master_config):
-        master_config = dict(master_config['master']['data'])
+        master_config = dict(master_config['master']['model'])
         hydra.core.global_hydra.GlobalHydra.instance().clear()
         self.data_config = initialize_config(**master_config)
         self.root_path = self.data_config.data.raw_data.raw_data_input_path
@@ -163,7 +163,7 @@ class initial_data_setup:
 
 class execute_data_pipeline:
     def __init__(self,master_config,load_previous=False):
-        master_config = dict(master_config['master']['data'])
+        master_config = dict(master_config['master']['model'])
         hydra.core.global_hydra.GlobalHydra.instance().clear()
         self.data_config = initialize_config(**master_config)
 
