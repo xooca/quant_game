@@ -29,13 +29,13 @@ generic:
   data_prefix: None
   
 data_split:
-  stratify_col: 'label_-30_1min_close'
+  stratify_col: ${model.data.target_column}
   test_percent: 0.3
   valid_percent: 0.3
 
 colab:
-  code_path: '/content/gdrive/MyDrive/Work/trading'
-  package_path: '/content/gdrive/MyDrive/Work/colab_packages'
+  code_path: '/content/drive/MyDrive/Work/trading'
+  package_path: '/content/drive/MyDrive/Work/colab_packages'
   current_path: '/content/notebook'
 
 initial_pipeline: [generic_pipeline]

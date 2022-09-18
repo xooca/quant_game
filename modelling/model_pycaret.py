@@ -6,6 +6,7 @@ import numpy as np
 from modelling.base import BaseModel
 import data.data_utils as du
 import os
+import omegaconf
 class modelling(BaseModel):
     def __init__(self,config):
         BaseModel.__init__(self,config)
@@ -30,8 +31,11 @@ class modelling(BaseModel):
         self.previous_load_comparison = self.config.model.model_metadata.previous_load_comparison
         self.previous_load_creation = self.config.model.model_metadata.previous_load_creation
         self.previous_load_tuned = self.config.model.model_metadata.previous_load_tuned
-        
+
     def initial_setup(self): 
+        self.experiment_setup = setup(data = self.train, **self.setup)
+
+    def initial_setup_v1(self): 
         if self.previous_load_setup:
             if os.path.exists(self.model_setup_save_path):
                 du.print_log(f"Setup exists... Loading from from {self.model_setup_save_path}",self.using_print)
@@ -97,7 +101,7 @@ class modelling(BaseModel):
             du.print_log(f"Model creation saved at location {self.model_creation_save_path} ",self.using_print)
 
     def model_creation_fn(self):
-        if len(self.create_model)==1:
+        if not any(isinstance(j,omegaconf.dictconfig.DictConfig) for i,j in self.create_model.items()):
             created_models = [create_model(**self.create_model)]
         else:
             created_models =[] 
@@ -205,7 +209,7 @@ class modelling(BaseModel):
         pred_metric = None
         if check_metric_flag:
             check_metric_arg = dict(self.config.model.trainer.check_metric)
-            check_metric_arg['actual'] = test[self.config.model.model_metadata.target_column]
+            check_metric_arg['actual'] = test[self.target_column]
             check_metric_arg['prediction'] = self.prediction['Label']
             pred_metric = check_metric(**check_metric_arg)
         return prediction,pred_metric

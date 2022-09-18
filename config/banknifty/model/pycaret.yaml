@@ -4,7 +4,7 @@ model_metadata:
   combine_train_valid: True
   presets: good_quality
   print_option: print
-  
+
   model_files: /content/drive/MyDrive/Work/trading/model/
   base_model_loc: ${model.model_metadata.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
   model_name: ${model.model_metadata.model_prefix}_${data.paths.ticker_name}_${model.data.target_column}
@@ -25,14 +25,14 @@ model_metadata:
   previous_load_tuned: True
 
 data:
-  target_column: label_-30_1min_close
   splits:
     load_train: True
     load_valid: False
     load_test: True
   sampling_type: frac
   sampling_frac: 0.4
-  drop_columns: [label_-15_1min_close,label_-60_1min_close,'Unnamed: 0',HILOl_13_21,HILOs_13_21,MCGD_10,PSARl_0.02_0.2,PSARs_0.02_0.2,QQEl_14_5_4.236,QQEs_14_5_4.236,SUPERTl_7_3.0,SUPERTs_7_3.0,PVDR_close_w,PVDR_close_w_MAX_MIN,PVDR_open_w,PVDR_open_w_MAX_MIN,PVDR_high_w,PVDR_high_w_MAX_MIN,PVDR_low_w,PVDR_low_w_MAX_MIN]
+  target_column: label_-45_1min_close
+  drop_columns: [label_-30_1min_close,label_-60_1min_close,'label_-15_1min_close','Unnamed: 0',HILOl_13_21,HILOs_13_21,MCGD_10,PSARl_0.02_0.2,PSARs_0.02_0.2,QQEl_14_5_4.236,QQEs_14_5_4.236,SUPERTl_7_3.0,SUPERTs_7_3.0,PVDR_close_w,PVDR_close_w_MAX_MIN,PVDR_open_w,PVDR_open_w_MAX_MIN,PVDR_high_w,PVDR_high_w_MAX_MIN,PVDR_low_w,PVDR_low_w_MAX_MIN]
   id_col: None
 
 evaluation:
