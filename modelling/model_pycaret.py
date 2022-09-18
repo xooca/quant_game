@@ -23,7 +23,7 @@ class modelling(BaseModel):
         
         self.model_setup_save_path = self.config.model.model_metadata.model_setup_save_path
         self.model_comparison_save_path = self.config.model.model_metadata.model_comparison_save_path
-        self.model_creation_save_path = self.config.model.model_metadata.print_opmodel_creation_save_pathtion
+        self.model_creation_save_path = self.config.model.model_metadata.model_creation_save_path
         self.model_tuned_save_path = self.config.model.model_metadata.model_tuned_save_path
 
         self.previous_load_setup = self.config.model.model_metadata.previous_load_setup
@@ -249,20 +249,21 @@ class modelling(BaseModel):
 
 
     def trainer(self):
+        #self.model_spec_obj = self.model_spec.modelling(self.model_config)
+        dataset_args = dict(self.config.model.data.splits)
+        self.define_dataset(**dataset_args)
+        du.print_log("******** Data definition Completed ************",self.using_print)
         self.initial_setup()
-        print("******** Setup Completed ************")
+        du.print_log("******** Setup Completed ************",self.using_print)
         self.model_creation()
-        print("******** Model Creation Completed ************")
+        du.print_log("******** Model Creation Completed ************",self.using_print)
         self.model_tuning(from_compare=False)
-        print("******** Model Tuning Completed ************")
+        du.print_log("******** Model Tuning Completed ************",self.using_print)
         self.finalize_tuned_model()
-        print("******** Model Finalization Completed ************")
+        du.print_log("******** Model Finalization Completed ************",self.using_print)
         self.model_saving()
-        print("******** Model Saving Completed ************")
+        du.print_log("******** Model Saving Completed ************",self.using_print)
         self.model_evaluation()
-        print("******** Model Evaluation Completed ************")
+        du.print_log("******** Model Evaluation Completed ************",self.using_print)
         self.model_prediction(self.test,check_metric_flag=True)
-        print("******** Model Prediction Completed ************")
-
-
-    
+        du.print_log("******** Model Prediction Completed ************",self.using_print)

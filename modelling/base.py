@@ -33,9 +33,9 @@ class BaseModel:
     def define_dataset(self,load_train = True,load_valid = True,load_test=False):
         if load_train:
             self.train = pd.read_csv(self.train_save_path)
-            self.train = self.train[self.train[self.config.target_column]!='unknown']
+            self.train = self.train[self.train[self.target_column]!='unknown']
             if len(list(self.drop_columns))>0:
-                self.train = self.train.drop(list(self.config.drop_columns),axis=1)
+                self.train = self.train.drop(list(self.drop_columns),axis=1)
             self.train = self.sampling(self.train)
         if load_valid:
             self.valid = pd.read_csv(self.valid_save_path)
@@ -44,7 +44,7 @@ class BaseModel:
                 self.valid = self.valid.drop(list(self.drop_columns),axis=1)
             self.valid = self.sampling(self.valid)
         if load_test:
-            self.test = pd.read_csv(self.config.data.paths.test_save_path)
+            self.test = pd.read_csv(self.test_save_path)
             self.test = self.test[self.test[self.target_column]!='unknown']
             if len(list(self.drop_columns))>0:
                 self.test = self.test.drop(list(self.drop_columns),axis=1)

@@ -1,7 +1,7 @@
 paths:
   ticker_name: 'banknifty'
   data_create_date: '2022-09-07'
-  data_files: "/content/gdrive/MyDrive/Work/trading/data_files/"
+  data_files: "/content/drive/MyDrive/Work/trading/data_files/"
   base_data_loc: "${data.paths.data_files}${data.paths.ticker_name}/${data.paths.data_create_date}/"
   input_path: "${data.raw_data.raw_data_save_path}"
   pipeinfo: "${data.paths.base_data_loc}/pipe.pkl"
@@ -32,7 +32,6 @@ data_split:
   stratify_col: 'label_-30_1min_close'
   test_percent: 0.3
   valid_percent: 0.3
-
 
 colab:
   code_path: '/content/gdrive/MyDrive/Work/trading'

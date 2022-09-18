@@ -1,15 +1,16 @@
 paths:
   ticker_name: 'banknifty'
   data_create_date: '2022-09-07'
-  data_files: "/content/gdrive/MyDrive/Work/trading/data_files/"
+  data_files: "/content/drive/MyDrive/Work/trading/data_files/"
   base_data_loc: "${data.paths.data_files}${data.paths.ticker_name}/${data.paths.data_create_date}/"
-  input_path: "/content/gdrive/MyDrive/Work/trading/data_files/banknifty/input/banknifty.csv"
+  input_path: "/content/drive/MyDrive/Work/trading/data_files/banknifty/input/banknifty.csv"
   pipeinfo: "${data.paths.base_data_loc}/pipe.pkl"
   train_save_path: "${data.paths.base_data_loc}train.csv"
   test_save_path: "${data.paths.base_data_loc}test.csv"
   valid_save_path: "${data.paths.base_data_loc}valid.csv"
   datapipeline_spec: data.feature_specs.feature_spec_v2
   predict_data_path: None
+
 
 generic:
   verbose_type: print
@@ -21,8 +22,8 @@ data_split:
   valid_percent: 0.3
 
 colab:
-  code_path: '/content/gdrive/MyDrive/Work/trading'
-  package_path: '/content/gdrive/MyDrive/Work/colab_packages'
+  code_path: '/content/drive/MyDrive/Work/trading'
+  package_path: '/content/drive/MyDrive/Work/colab_packages'
   current_path: '/content/notebook'
 
 initial_pipeline: [generic_pipeline,save_pipeline]

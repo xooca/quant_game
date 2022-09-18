@@ -4,19 +4,20 @@ model_metadata:
   combine_train_valid: True
   presets: good_quality
   print_option: print
-  model_files: /content/gdrive/MyDrive/Work/trading/model/
-  base_model_loc: ${model.pycaret.model_metadata.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
-  model_name: ${model.pycaret.model_metadata.model_prefix}_${data.paths.ticker_name}_${model.pycaret.model_metadata.target_column}
-  model_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}
-  model_type_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}
-  model_parameter_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_hyperparameter.pkl
-  model_evaluation_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_evaluation.pkl
-  model_prediction_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_prediction.pkl
+  
+  model_files: /content/drive/MyDrive/Work/trading/model/
+  base_model_loc: ${model.model_metadata.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
+  model_name: ${model.model_metadata.model_prefix}_${data.paths.ticker_name}_${model.data.target_column}
+  model_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}
+  model_type_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}
+  model_parameter_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}_hyperparameter.pkl
+  model_evaluation_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}_evaluation.pkl
+  model_prediction_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}_prediction.pkl
 
-  model_setup_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_setup.pkl
-  model_comparison_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_comparison.pkl
-  model_creation_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_creation.pkl
-  model_tuned_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_tuned.pkl
+  model_setup_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}_setup.pkl
+  model_comparison_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}_comparison.pkl
+  model_creation_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}_creation.pkl
+  model_tuned_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}_tuned.pkl
 
   previous_load_setup: True
   previous_load_comparison: True
@@ -50,7 +51,7 @@ trainer:
     trainer_option: 2
     presets: good_quality
   setup:
-    target: ${model.pycaret.data.target_column}
+    target: ${model.data.target_column}
     normalize: True 
     transformation: True
     ignore_low_variance: True      
