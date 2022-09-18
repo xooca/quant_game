@@ -14,6 +14,11 @@ autogluon:
     model_save_path: ${model.autogluon.model_metadata.base_model_loc}${model.autogluon.model_metadata.model_name}.pkl
     model_parameter_save_path: ${model.autogluon.model_metadata.base_model_loc}${model.autogluon.model_metadata.model_name}_hyperparameter.pkl
 
+  data_splits:
+    load_train: True
+    load_valid: False
+    load_test: True
+
   evaluation:
     eval_metric: accuracy
     load_predictor_from_path: 0
