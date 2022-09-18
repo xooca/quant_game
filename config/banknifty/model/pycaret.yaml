@@ -1,114 +1,133 @@
-pycaret:
-  model_metadata:
-    model_prefix: pycaret
-    target_column: label_-60_1min_close
-    drop_columns: [label_-15_1min_close,label_-30_1min_close,'Unnamed: 0',HILOl_13_21,HILOs_13_21,MCGD_10,PSARl_0.02_0.2,PSARs_0.02_0.2,QQEl_14_5_4.236,QQEs_14_5_4.236,SUPERTl_7_3.0,SUPERTs_7_3.0,PVDR_close_w,PVDR_close_w_MAX_MIN,PVDR_open_w,PVDR_open_w_MAX_MIN,PVDR_high_w,PVDR_high_w_MAX_MIN,PVDR_low_w,PVDR_low_w_MAX_MIN]
-    sampling_type: frac
-    combine_train_valid: True
-    sampling: 0.4
+model_metadata:
+  model_prefix: pycaret
+  model_spec: modelling.model_pycaret
+  combine_train_valid: True
+  presets: good_quality
+  print_option: print
+  model_files: /content/gdrive/MyDrive/Work/trading/model/
+  base_model_loc: ${model.pycaret.model_metadata.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
+  model_name: ${model.pycaret.model_metadata.model_prefix}_${data.paths.ticker_name}_${model.pycaret.model_metadata.target_column}
+  model_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}
+  model_type_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}
+  model_parameter_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_hyperparameter.pkl
+  model_evaluation_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_evaluation.pkl
+  model_prediction_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_prediction.pkl
+
+  model_setup_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_setup.pkl
+  model_comparison_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_comparison.pkl
+  model_creation_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_creation.pkl
+  model_tuned_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_tuned.pkl
+
+  previous_load_setup: True
+  previous_load_comparison: True
+  previous_load_creation: True
+  previous_load_tuned: True
+
+data:
+  target_column: label_-30_1min_close
+  splits:
+    load_train: True
+    load_valid: False
+    load_test: True
+  sampling_type: frac
+  sampling_frac: 0.4
+  drop_columns: [label_-15_1min_close,label_-60_1min_close,'Unnamed: 0',HILOl_13_21,HILOs_13_21,MCGD_10,PSARl_0.02_0.2,PSARs_0.02_0.2,QQEl_14_5_4.236,QQEs_14_5_4.236,SUPERTl_7_3.0,SUPERTs_7_3.0,PVDR_close_w,PVDR_close_w_MAX_MIN,PVDR_open_w,PVDR_open_w_MAX_MIN,PVDR_high_w,PVDR_high_w_MAX_MIN,PVDR_low_w,PVDR_low_w_MAX_MIN]
+  id_col: None
+
+evaluation:
+  eval_metric: accuracy
+  load_predictor_from_path: 0
+
+prediction:
+  load_predictor_from_path: 0
+
+trainer:
+  generic: 
+    time_limit: 12000
+    use_default_parameter: 0
+    optimize: 0
+    load_parameter_from_path: False
+    trainer_option: 2
     presets: good_quality
-    id_col: None
-    model_files: /content/gdrive/MyDrive/Work/trading/model/
-    base_model_loc: ${model.pycaret.model_metadata.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
-    model_name: ${model.pycaret.model_metadata.model_prefix}_${data.paths.ticker_name}_${model.pycaret.model_metadata.target_column}
-    model_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}
-    model_parameter_save_path: ${model.pycaret.model_metadata.base_model_loc}${model.pycaret.model_metadata.model_name}_hyperparameter.pkl
-    model_spec:  modelling.model_pycaret
-
-  evaluation:
-    eval_metric: accuracy
-    load_predictor_from_path: 0
-
-  prediction:
-    load_predictor_from_path: 0
-
-  trainer:
-    generic: 
-      time_limit: 12000
-      use_default_parameter: 0
-      optimize: 0
-      load_parameter_from_path: False
-      trainer_option: 2
-      presets: good_quality
-    setup:
-      target: ${model.pycaret.model_metadata.target_column}
-      normalize: True 
-      transformation: True
-      ignore_low_variance: True      
-      feature_selection: True
-      remove_multicollinearity: True
-      multicollinearity_threshold: 0.95
-      feature_interaction: False
-      feature_ratio: False
-      polynomial_features: False
-      trigonometry_features: False
-      combine_rare_levels: False
-      create_clusters: False
-      imputation_type: 'iterative'
-      fix_imbalance: False
-      session_id: 123
-      use_gpu: False
-    compare_models:
-      include: ['xgboost', 'lightgbm','catboost','et','dummy','rf', 'knn','ada']
-      fold: 3
-      n_select: 6
-      sort: 'f1'
-    compare_models1:
-      include: ['lightgbm']
-      fold: 3
-      n_select: 1
-      sort: 'f1'
-    compare_models2:
-      n_select: 4
-    create_model:
-      estimator: lightgbm
+  setup:
+    target: ${model.pycaret.data.target_column}
+    normalize: True 
+    transformation: True
+    ignore_low_variance: True      
+    feature_selection: True
+    remove_multicollinearity: True
+    multicollinearity_threshold: 0.95
+    feature_interaction: False
+    feature_ratio: False
+    polynomial_features: False
+    trigonometry_features: False
+    combine_rare_levels: False
+    create_clusters: False
+    imputation_type: 'iterative'
+    fix_imbalance: False
+    session_id: 123
+    use_gpu: False
+  compare_models:
+    include: ['xgboost', 'lightgbm','catboost','et','dummy','rf', 'knn','ada']
+    fold: 3
+    n_select: 6
+    sort: 'f1'
+  compare_models1:
+    include: ['lightgbm']
+    fold: 3
+    n_select: 1
+    sort: 'f1'
+  compare_models2:
+    n_select: 4
+  create_model:
+    estimator: lightgbm
+    fold: 4
+    return_train_score: True
+  create_model1:
+    cm1:
+      estimator: xgboost
       fold: 4
       return_train_score: True
-    create_model1:
-      cm1:
-        estimator: xgboost
-        fold: 4
-        return_train_score: True
-      cm2:
-        extimator: gpc
-        fold: 4
-        return_train_score: True
-    tune_model_all:
+    cm2:
+      extimator: gpc
+      fold: 4
+      return_train_score: True
+  tune_model_all:
+    return_tuner: False
+    search_library: optuna
+    early_stopping: Hyperband
+    optimize: F1
+    fold: 5
+  tune_model:
+    cm1:
       return_tuner: False
       search_library: optuna
       early_stopping: Hyperband
-      optimize: F1
       fold: 5
-    tune_model:
-      cm1:
-        return_tuner: False
-        search_library: optuna
-        early_stopping: Hyperband
-        fold: 5
-      cm2:
-        return_tuner: False
-        search_library: optuna
-        early_stopping: Hyperband
-        fold: 5  
-      cm3:
-        return_tuner: False
-        search_library: optuna
-        early_stopping: Hyperband
-        fold: 5  
-      cm4:
-        return_tuner: False
-        search_library: optuna
-        early_stopping: Hyperband
-        fold: 5 
-    check_metric:
-      metric: F1 
-    stack_model:
-      round: 4
-      method: auto
-      restack: True
-    blend_model:
-      fold: 4
-      method: soft
-      choose_better: True 
+    cm2:
+      return_tuner: False
+      search_library: optuna
+      early_stopping: Hyperband
+      fold: 5  
+    cm3:
+      return_tuner: False
+      search_library: optuna
+      early_stopping: Hyperband
+      fold: 5  
+    cm4:
+      return_tuner: False
+      search_library: optuna
+      early_stopping: Hyperband
+      fold: 5 
+  check_metric:
+    metric: F1 
+  stack_model:
+    round: 4
+    method: auto
+    restack: True
+  blend_model:
+    fold: 4
+    method: soft
+    choose_better: True 
 
     

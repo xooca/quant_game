@@ -195,7 +195,7 @@ class LabelCreator_Light(BaseEstimator, TransformerMixin):
         elif val > -30 and val <= 0:
             return '0to-30'
         elif val > -80 and val <= -30:
-            return '-30to-60'
+            return '-30to-80'
         elif val <= -80:
             return 'below80'
         else:

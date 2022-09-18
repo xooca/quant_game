@@ -47,6 +47,16 @@ def convert_df_to_timeseries(df):
     df = df[['open','high','low','close']]
     return df
 
+def load_object(object_path):
+    with open(object_path, 'rb') as handle:
+        return_obj = pickle.load(handle)
+        print_log(f"Object loaded")
+    return return_obj
+
+def save_object(object_path,obj):
+    with open(object_path, 'wb') as handle:
+        pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        print_log(f"Object saved at location {object_path}")
 class initial_data_setup:
     def __init__(self,master_config):
         master_config = dict(master_config['master']['data'])
@@ -61,6 +71,7 @@ class initial_data_setup:
         self.source_data = self.data_config.data.raw_data.source_data
         self.raw_data_save_path = self.data_config.data.raw_data.raw_data_save_path
         self.ohlc_column = self.data_config.data.common.ohlc_column
+
 
     def unzip_folders(self):
         for root, dirs, files in os.walk(self.root_path):
@@ -80,16 +91,17 @@ class initial_data_setup:
                     print_log(f"File {f_name} is not unzipped",self.using_print)
                     print_log(f"Error encountered is {e1}",self.using_print)
 
-    def create_dataset(self,reload = False):
+    def create_dataset(self,reload_all = True):
         files_list = []
         bad_files = []
         files_processed = []
         base_df = pd.DataFrame(columns = self.initial_columns)
+        print_log(f'Source data path is { self.source_data}')
         if not os.path.exists(self.source_data):
             os.makedirs(self.source_data)
             print_log(f'Created folder {self.source_data}',self.using_print)
 
-        already_loaded_file_name = f'{self.source_data}/already_loaded_files.pickle'
+        already_loaded_file_name = f'{self.source_data}already_loaded_files.pickle'
         print_log(f'Data save path is { self.raw_data_save_path}')
         print_log(f'File with already loaded files is {already_loaded_file_name}')
         try:
@@ -100,27 +112,30 @@ class initial_data_setup:
         except Exception as e1:
             print_log(f"File {already_loaded_file_name} is not loaded because of error : {e1}",self.using_print)
             already_loaded_files = []
+        print_log(f"Raw data root path is {self.root_path}",self.using_print)
         for root, dirs, files in os.walk(self.root_path):
             for filename in fnmatch.filter(files, self.data_pattern):
                 f_name = Path(os.path.join(root, filename))
                 files_list.append(f_name)
+
         files_to_be_loaded = [f for f in files_list if f not in already_loaded_files]
         files_to_be_loaded = list(dict.fromkeys(files_to_be_loaded))
         files_list = list(dict.fromkeys(files_list))
         print_log(f"Total files detected {len(files_list)}",self.using_print)
         print_log(f"Total new files detected {len(files_to_be_loaded)}",self.using_print)
+        
         try:
             base_df = pd.read_csv(self.raw_data_save_path)
         except Exception as e1:
             print_log(f"Error while loading dataframe from { self.raw_data_save_path} because of error : {e1}")
             base_df = pd.DataFrame(columns = self.ohlc_column)
             files_to_be_loaded = files_list
-        if len(base_df) == 0 or reload:
+        if len(base_df) == 0 or reload_all:
             files_to_be_loaded = files_list
             print_log(f"We are going to reload all the data",self.using_print)
-
         print_log(f"Number of files to be loaded {len(files_to_be_loaded)}",self.using_print)
         base_df_st_shape = base_df.shape
+        files_to_be_loaded = sorted(files_to_be_loaded)
         for i,f_name in enumerate(files_to_be_loaded,1):
             f_name = os.path.join(root, f_name)
             try:
@@ -129,9 +144,8 @@ class initial_data_setup:
                 tmp_df.columns = self.initial_columns
                 tmp_df = convert_df_to_timeseries(tmp_df)
                 base_df = pd.concat([base_df,tmp_df],axis=0)
-                print_log(len(files_to_be_loaded)-i,self.using_print)
-                print_log(base_df.shape,self.using_print)
-                print_log(f_name,self.using_print)
+                print_log(f"Data shape after loading file {f_name} is {base_df.shape}",self.using_print)
+                print_log(f"Files left to be loaded {len(files_to_be_loaded)-i}",self.using_print)
                 already_loaded_files.append(f_name)
             except Exception as e1:
                 bad_files.append(f_name)
@@ -269,7 +283,7 @@ class execute_data_pipeline:
             pipe_dir = f"{pipe_location}saved_pipeline/{datapipeline}"
             pipe_file = f"{pipe_dir}/pipe_{pipe_name}.pkl"
 
-            if load_previous:
+            if self.load_previous:
                 if os.path.exists(pipe_file):
                     print_log(f"{pipe_file} already exists. skipping {pipe_name}",self.using_print)
                     continue

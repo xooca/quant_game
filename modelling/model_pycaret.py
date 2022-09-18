@@ -3,182 +3,239 @@ import pandas as pd
 from pycaret.classification import setup,compare_models,create_model,evaluate_model,plot_model,tune_model,blend_models,stack_models,finalize_model,save_model,load_model,predict_model
 from pycaret.utils import check_metric
 import numpy as np
-
-class modelling:
+from modelling.base import BaseModel
+import data.data_utils as du
+import os
+class modelling(BaseModel):
     def __init__(self,config):
-        self.config = config
-        self.trainer_option = self.config.model.pycaret.trainer.generic.trainer_option
+        BaseModel.__init__(self,config)
+        self.define_parameters_pycaret()
 
-    def sampling(self,df):
-        df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        df.dropna(inplace=True)
-        if self.config.model.pycaret.model_metadata.sampling_type == 'frac':
-            df = df.groupby(self.config.model.pycaret.model_metadata.target_column, group_keys=False).apply(lambda x: x.sample(frac=self.config.model.pycaret.model_metadata.sampling))
-        elif self.config.model.pycaret.model_metadata.sampling_type == 'count':
-            df = df.groupby(self.config.model.pycaret.model_metadata.target_column, group_keys=False).apply(lambda x: x.sample(self.config.model.pycaret.model_metadata.sampling))
-        else:
-            print("No sampling done")
-        return df
-
-    def define_dataset(self,load_train = True,load_valid = True,load_test=False):
-        if load_train:
-            self.train = pd.read_csv(self.config.data.paths.train_save_path)
-            self.train = self.train[self.train[self.config.model.pycaret.model_metadata.target_column]!='unknown']
-            if len(list(self.config.model.pycaret.model_metadata.drop_columns))>0:
-                self.train = self.train.drop(list(self.config.model.pycaret.model_metadata.drop_columns),axis=1)
-            self.train = self.sampling(self.train)
-        if load_valid:
-            self.valid = pd.read_csv(self.config.data.paths.valid_save_path)
-            self.valid = self.valid[self.valid[self.config.model.pycaret.model_metadata.target_column]!='unknown']
-            if len(list(self.config.model.pycaret.model_metadata.drop_columns))>0:
-                self.valid = self.valid.drop(list(self.config.model.pycaret.model_metadata.drop_columns),axis=1)
-            self.valid = self.sampling(self.valid)
-        if load_test:
-            self.test = pd.read_csv(self.config.data.paths.test_save_path)
-            self.test = self.test[self.test[self.config.model.pycaret.model_metadata.target_column]!='unknown']
-            if len(list(self.config.model.pycaret.model_metadata.drop_columns))>0:
-                self.test = self.test.drop(list(self.config.model.pycaret.model_metadata.drop_columns),axis=1)
-            self.test = self.sampling(self.test)
-
-
-    def initial_setup(self): 
-        self.experiment_setup = setup(data = self.train, **self.config.model.pycaret.trainer.setup)
+    def define_parameters_pycaret(self):
+        self.compare_models = self.config.model.trainer.compare_models
+        self.setup = self.config.model.trainer.setup
+        self.create_model = self.config.model.trainer.create_model
+        self.model_save_path = self.config.model.model_metadata.model_save_path
+        self.model_evaluation_save_path = self.config.model.model_metadata.model_evaluation_save_path
+        self.model_prediction_save_path = self.config.model.model_metadata.model_prediction_save_path
+        self.blend_model = self.config.model.trainer.blend_model
+        self.using_print = self.config.model.model_metadata.print_option
         
-    def model_comparison(self, compare_option=1):
+        self.model_setup_save_path = self.config.model.model_metadata.model_setup_save_path
+        self.model_comparison_save_path = self.config.model.model_metadata.model_comparison_save_path
+        self.model_creation_save_path = self.config.model.model_metadata.print_opmodel_creation_save_pathtion
+        self.model_tuned_save_path = self.config.model.model_metadata.model_tuned_save_path
+
+        self.previous_load_setup = self.config.model.model_metadata.previous_load_setup
+        self.previous_load_comparison = self.config.model.model_metadata.previous_load_comparison
+        self.previous_load_creation = self.config.model.model_metadata.previous_load_creation
+        self.previous_load_tuned = self.config.model.model_metadata.previous_load_tuned
+        
+    def initial_setup(self): 
+        if self.previous_load_setup:
+            if os.path.exists(self.model_setup_save_path):
+                du.print_log(f"Setup exists... Loading from from {self.model_setup_save_path}",self.using_print)
+                self.experiment_setup = du.load_object(object_path=self.model_setup_save_path)
+                du.print_log(f"Set up loaded from path {self.model_setup_save_path}",self.using_print)
+            else:
+                du.print_log(f"Set up doesnt exists at location {self.model_setup_save_path}",self.using_print)
+                self.experiment_setup = setup(data = self.train, **self.setup)
+                du.print_log(f"Set up loaded ",self.using_print)
+                du.save_object(object_path=self.model_setup_save_path,obj=self.experiment_setup )
+                du.print_log(f"Set up saved at location {self.model_setup_save_path} ",self.using_print)
+        else:
+            du.print_log(f"Loading setup",self.using_print)
+            self.experiment_setup = setup(data = self.train, **self.setup)
+            du.print_log(f"Set up loaded ",self.using_print)
+            du.save_object(object_path=self.model_setup_save_path,obj=self.experiment_setup )
+            du.print_log(f"Set up saved at location {self.model_setup_save_path} ",self.using_print)
+        
+    def model_comparison(self, compare_option=1): 
+        if self.previous_load_comparison:
+            if os.path.exists(self.model_comparison_save_path):
+                du.print_log(f"Model comparison exists... Loading from from {self.model_comparison_save_path}",self.using_print)
+                self.compared_models = du.load_object(object_path=self.model_comparison_save_path)
+                du.print_log(f"Model comparison loaded from path {self.model_comparison_save_path}",self.using_print)
+            else:
+                du.print_log(f"Model comparison doesnt exists at location {self.model_comparison_save_path}",self.using_print)
+                self.compared_models = self.model_comparison_fn(compare_option=compare_option)
+                du.print_log(f"Model comparison loaded ",self.using_print)
+                du.save_object(object_path=self.model_comparison_save_path,obj=self.compared_models )
+                du.print_log(f"Model comparison saved at location {self.model_comparison_save_path} ",self.using_print)
+        else:
+            du.print_log(f"Loading Model comparison",self.using_print)
+            self.compared_models = self.model_comparison_fn(compare_option=compare_option)
+            du.print_log(f"Model comparison loaded ",self.using_print)
+            du.save_object(object_path=self.model_comparison_save_path,obj=self.compared_models )
+            du.print_log(f"Model comparison saved at location {self.model_comparison_save_path} ",self.using_print)
+
+    def model_comparison_fn(self, compare_option=1):
         if compare_option == 1:
-            arg_dict = dict(self.config.model.pycaret.trainer.compare_models)
-            self.model_compare = compare_models(**arg_dict) 
+            arg_dict = dict(self.compare_models)
+            compared_models = compare_models(**arg_dict) 
         else:
-            self.model_compare = compare_models() 
+            compared_models = compare_models() 
+        return compared_models
 
-    def model_creation_multiple(self):
-        self.all_models =[] 
-        for args,vals in self.config.model.pycaret.trainer.create_model.items():
-            vals = dict(vals)
-            model = create_model(**vals) 
-            self.all_models.append(model)
-
-    def model_creation(self):
-        vals = self.config.model.pycaret.trainer.create_model
-        self.all_models = [create_model(**vals)]
-
-    def evaluate_tuned_model(self):
-        if len(self.all_tuned_models) == 1:
-            evaluate_model(self.all_tuned_models[0])
+    def model_creation(self): 
+        if self.previous_load_creation:
+            if os.path.exists(self.model_creation_save_path):
+                du.print_log(f"Model creation exists... Loading from from {self.model_creation_save_path}",self.using_print)
+                self.created_models = du.load_object(object_path=self.model_creation_save_path)
+                du.print_log(f"Model creation loaded from path {self.model_creation_save_path}",self.using_print)
+            else:
+                du.print_log(f"Model creation doesnt exists at location {self.model_creation_save_path}",self.using_print)
+                self.created_models = self.model_creation_fn()
+                du.print_log(f"Model creation loaded ",self.using_print)
+                du.save_object(object_path=self.model_creation_save_path,obj=self.created_models )
+                du.print_log(f"Model creation saved at location {self.model_creation_save_path} ",self.using_print)
         else:
-            for model in self.all_tuned_models:
-                evaluate_model(model)
+            du.print_log(f"Loading Model creation",self.using_print)
+            self.created_models = self.model_creation_fn()
+            du.print_log(f"Model creation loaded ",self.using_print)
+            du.save_object(object_path=self.model_creation_save_path,obj=self.created_models )
+            du.print_log(f"Model creation saved at location {self.model_creation_save_path} ",self.using_print)
 
-    def finalize_tune_model(self):
-        if len(self.all_tuned_models) == 1:
-            self.final_model = [finalize_model(self.all_tuned_models[0])]
+    def model_creation_fn(self):
+        if len(self.create_model)==1:
+            created_models = [create_model(**self.create_model)]
+        else:
+            created_models =[] 
+            for args,vals in self.config.model.trainer.create_model.items():
+                vals = dict(vals)
+                model = create_model(**vals) 
+                created_models.append(model)
+        return created_models
+
+    def finalize_tuned_model(self):
+        if len(self.tuned_models) == 1:
+            self.final_model = [finalize_model(self.tuned_models[0])]
         else:
             self.final_model = []
-            for model in self.all_tuned_models:
+            for model in self.tuned_models:
                 self.final_model = finalize_model(model)
 
-    def save_models(self):
+    def model_saving(self):
+        model_saved_paths = []
         if len(self.final_model) == 1:
-            path = f"{self.config.model.pycaret.model_metadata.model_save_path}_{self.config.model.pycaret.trainer.create_model.estimator}"
+            path = f"{self.model_save_path}_{self.config.model.trainer.create_model.estimator}"
             save_model(self.final_model[0], path)
             print(f"Model is save as path {path}")
+            model_saved_paths.append(path)
         else:
-            #for i,model in enumerate(self.final_model):
-            if len(self.model_considered) == len(self.config.model.pycaret.trainer.create_model):
-                for model,vals in zip(self.final_model,self.config.model.pycaret.trainer.create_model.items()):
+            if len(self.considered_models) == len(self.create_model):
+                for model,vals in zip(self.final_model,self.create_model.items()):
                     arg_dict = dict(vals[-1])
-                    path = f"{self.config.model.pycaret.model_metadata.model_save_path}_{arg_dict['estimator']}"
+                    path = f"{self.model_save_path}_{arg_dict['estimator']}"
                     save_model(model, path)
                     print(f"Model is save as path {path}")
+                    model_saved_paths.append(path)
             else:
                 for i,model in enumerate(self.final_model):
                     arg_dict = dict(vals[-1])
-                    path = f"{self.config.model.pycaret.model_metadata.model_save_path}_{i}"
+                    path = f"{self.model_save_path}_{i}"
                     save_model(model, path)
                     print(f"Model is save as path {path}")
+                    model_saved_paths.append(path)
+        du.save_object(object_path=f"{self.model_save_path}_type.pkl",obj=model_saved_paths)
 
-    def model_tuning(self,from_compare=True):
-        self.all_tuned_models =[]
-        if from_compare:
-            self.model_considered = self.model_compare
+    def model_tuning(self,from_compare=True): 
+        if self.previous_load_creation:
+            if os.path.exists(self.model_tuned_save_path):
+                du.print_log(f"Tuned models exists... Loading from from {self.model_tuned_save_path}",self.using_print)
+                self.tuned_models = du.load_object(object_path=self.model_tuned_save_path)
+                du.print_log(f"Tuned models loaded from path {self.model_tuned_save_path}",self.using_print)
+            else:
+                du.print_log(f"Tuned models doesnt exists at location {self.model_tuned_save_path}",self.using_print)
+                self.tuned_models = self.model_tuning_fn(from_compare=from_compare)
+                du.print_log(f"Tuned models loaded ",self.using_print)
+                du.save_object(object_path=self.model_tuned_save_path,obj=self.tuned_models )
+                du.print_log(f"Tuned models saved at location {self.model_tuned_save_path} ",self.using_print)
         else:
-            self.model_considered = self.all_models
-        if len(self.model_considered) == len(self.config.model.pycaret.trainer.tune_model):
-            for model,vals in zip(self.model_considered,self.config.model.pycaret.trainer.tune_model.items()):
+            du.print_log(f"Loading tuned models",self.using_print)
+            self.tuned_models = self.model_tuning_fn(from_compare=from_compare)
+            du.print_log(f"Tuned models loaded ",self.using_print)
+            du.save_object(object_path=self.model_tuned_save_path,obj=self.tuned_models )
+            du.print_log(f"Tuned models saved at location {self.model_tuned_save_path} ",self.using_print)
+
+    def model_tuning_fn(self,from_compare=True):
+        tuned_models =[]
+        if from_compare:
+            self.considered_models = self.compared_models
+        else:
+            self.considered_models = self.created_models
+        if len(self.considered_models) == len(self.config.model.trainer.tune_model):
+            for model,vals in zip(self.considered_models,self.config.model.trainer.tune_model.items()):
                 arg_dict = dict(vals[-1])
                 arg_dict['estimator'] = model
                 print(arg_dict)
                 tuned_model = tune_model(**arg_dict) 
-                self.all_tuned_models.append(tuned_model)
+                tuned_models.append(tuned_model)
         else:
-            for model in self.model_considered:
-                arg_dict = dict(self.config.model.pycaret.trainer.tune_model_all)
+            for model in self.considered_models:
+                arg_dict = dict(self.config.model.trainer.tune_model_all)
                 arg_dict['estimator'] = model
                 print(arg_dict)
                 tuned_model = tune_model(**arg_dict) 
-                self.all_tuned_models.append(tuned_model)
+                tuned_models.append(tuned_model)
+        return tuned_models
 
     def model_blending(self,estimator_list=None):
-        arg_dict = dict(self.config.model.pycaret.trainer.blend_model)
+        arg_dict = dict(self.config.model.trainer.blend_model)
         if estimator_list is not None:
             arg_dict['estimator_list'] = estimator_list
             print(arg_dict)
         else:
-            arg_dict['estimator_list'] = self.all_tuned_models
+            arg_dict['estimator_list'] = self.tuned_models
             print(arg_dict)
         self.blender = blend_models(**arg_dict)
 
     def model_stacking(self,estimator_list=None,meta_model=None):
-        arg_dict = dict(self.config.model.pycaret.trainer.stack_model)
+        arg_dict = dict(self.config.model.trainer.stack_model)
         if estimator_list is not None:
             arg_dict['estimator_list'] = estimator_list
             arg_dict['meta_model'] = meta_model
         else:
-            arg_dict['estimator_list'] = self.all_tuned_models[1:]
-            arg_dict['meta_model'] = self.all_tuned_models[0]
+            arg_dict['estimator_list'] = self.tuned_models[1:]
+            arg_dict['meta_model'] = self.tuned_models[0]
         self.stacker = stack_models(**arg_dict)
 
-    def load_model_and_predict(self,test,check_metric_flag=True):
-        path = f"{self.config.model.pycaret.model_metadata.model_save_path}_{self.config.model.pycaret.trainer.create_model.estimator}"
-        #if self.config.model.pycaret.model_metadata.target_column in test.columns.tolist():
-        #    test = test.drop(self.config.model.pycaret.model_metadata.target_column,axis=1)
-        model = load_model(path)
-        print(f"Model is save as path {path}")
-        self.prediction = predict_model(model, data=test)
+    def predict_model(self,model,test,check_metric_flag=True):
+        prediction = predict_model(model, data=test)
+        pred_metric = None
         if check_metric_flag:
-            check_metric_arg = dict(self.config.model.pycaret.trainer.check_metric)
-            check_metric_arg['actual'] = test[self.config.model.pycaret.model_metadata.target_column]
+            check_metric_arg = dict(self.config.model.trainer.check_metric)
+            check_metric_arg['actual'] = test[self.config.model.model_metadata.target_column]
             check_metric_arg['prediction'] = self.prediction['Label']
-            self.pred_metric = check_metric(**check_metric_arg)
+            pred_metric = check_metric(**check_metric_arg)
+        return prediction,pred_metric
 
-    def load_and_predict_v1(self,test,check_metric_flag=True):
-        if len(self.final_model) == 1:
-            path = f"{self.config.model.pycaret.model_metadata.model_save_path}"
-            #if self.config.model.pycaret.model_metadata.target_column in test.columns.tolist():
-            #    test = test.drop(self.config.model.pycaret.model_metadata.target_column,axis=1)
-            model = load_model(path)
-            print(f"Model is save as path {path}")
-            self.prediction = predict_model(model, data=test)
-            if check_metric_flag:
-                check_metric_arg = dict(self.config.model.pycaret.trainer.check_metric)
-                check_metric_arg['actual'] = test[self.config.model.pycaret.model_metadata.target_column]
-                check_metric_arg['prediction'] = self.prediction['Label']
-                self.pred_metric = check_metric(**check_metric_arg)
+    def load_models(self):
+        self.model_saved_paths = du.load_object(object_path=f"{self.model_save_path}_type.pkl")
+        all_saved_models = []
+        for model_path in self.model_saved_paths:
+            model = load_model(model_path)
+            all_saved_models.append(model)
+        return all_saved_models
 
-        else:
-            self.prediction = []
-            self.pred_metric =[]
-            for i,model in enumerate(self.final_model):
-                path = f"{self.config.model.pycaret.model_metadata.model_save_path}_{i}"
-                #if self.config.model.pycaret.model_metadata.target_column in test.columns.tolist():
-                #    test = test.drop(self.config.model.pycaret.model_metadata.target_column,axis=1)
-                model = load_model(path)
-                self.prediction.append(predict_model(model, data=test))
-                if check_metric_flag:
-                    check_metric_arg = dict(self.config.model.pycaret.trainer.check_metric)
-                    check_metric_arg['actual'] = test[self.config.model.pycaret.model_metadata.target_column]
-                    check_metric_arg['prediction'] = self.prediction['Label']
-                    self.pred_metric.append(check_metric(**check_metric_arg))
+    def model_prediction(self,test,check_metric_flag=False):
+        models = self.load_models()
+        prediction_artifacts = []
+        for model in models:
+            prediction_artifact = {}
+            prediction,pred_metric = self.predict_model(model,test,check_metric_flag)
+            prediction_artifact.update({'prediction':prediction})
+            prediction_artifact.update({'pred_metric':pred_metric})
+            prediction_artifact.update({'model':model})
+            prediction_artifacts.append(prediction_artifact)
+        du.save_object(object_path=self.model_prediction_save_path,obj=prediction_artifacts)
+
+    def model_evaluation(self):
+        models = self.load_models()
+        evaluation_artifacts =[]
+        for model in models:
+            evaluation_artifacts.append(evaluate_model(model))
+        du.save_object(object_path=self.model_evaluation_save_path,obj=evaluation_artifacts)
 
     def trainer_1(self):
         self.initial_setup()
@@ -194,15 +251,18 @@ class modelling:
     def trainer(self):
         self.initial_setup()
         print("******** Setup Completed ************")
-        self.model_creation( )
+        self.model_creation()
         print("******** Model Creation Completed ************")
         self.model_tuning(from_compare=False)
         print("******** Model Tuning Completed ************")
-        self.finalize_tune_model()
+        self.finalize_tuned_model()
         print("******** Model Finalization Completed ************")
-        self.save_models()
+        self.model_saving()
         print("******** Model Saving Completed ************")
-        self.load_and_predict(self,self.test,check_metric=True)
+        self.model_evaluation()
+        print("******** Model Evaluation Completed ************")
+        self.model_prediction(self.test,check_metric_flag=True)
+        print("******** Model Prediction Completed ************")
 
 
     
