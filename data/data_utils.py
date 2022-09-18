@@ -25,6 +25,20 @@ warnings.filterwarnings('ignore')
 os.getcwd()
 pd.options.display.max_columns = None
 
+def nullcolumns(df):
+    t = pd.DataFrame(df[df.columns[df.isnull().any()]].isnull().sum()).reset_index()
+    t.columns = ['colname','nullcnt']
+    t = t.sort_values(by='nullcnt',ascending=False)
+    return t
+
+def checknans(df,threshold=100):
+    nan_cols =[]
+    for col in df.columns.tolist() :
+        if sum(np.isnan(df[col])) > threshold:
+            print(f"{col}.... {sum(np.isnan(df.train[col]))}")
+            nan_cols.append(col)
+    return nan_cols
+    
 def initialize_config(overrides,version_base=None, config_path="../config"):
     initialize(config_path=config_path)
     dc=compose(overrides= overrides)
@@ -459,19 +473,6 @@ class execute_data_pipeline:
                     valid.to_csv(self.data_config.data.paths.valid_save_path)
                     print_log(f"Validation data saved at location {self.data_config.data.paths.valid_save_path}",self.using_print)
 
-def nullcolumns(df):
-    t = pd.DataFrame(df[df.columns[df.isnull().any()]].isnull().sum()).reset_index()
-    t.columns = ['colname','nullcnt']
-    t = t.sort_values(by='nullcnt',ascending=False)
-    return t
-
-def checknans(df,threshold=100):
-    nan_cols =[]
-    for col in df.columns.tolist() :
-        if sum(np.isnan(df[col])) > threshold:
-            print(f"{col}.... {sum(np.isnan(df.train[col]))}")
-            nan_cols.append(col)
-    return nan_cols
 class datacleaner:
     def __init__(self, df, targetcol, id_cols=None, cat_threshold=100):
         self.df_train = df
