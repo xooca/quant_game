@@ -45,7 +45,7 @@ class pipelines:
             ('tech_indicator1_ND2', de.NormalizeDataset(column_pattern = self.OHLC_COLUMNS + self.TECHNICAL_IND_PATTERN,fillna=True,fillna_method='ffill')),
             ('tech_indicator2', de.CreateTechnicalIndicatorUsingPandasTA(exclude=self.TA_PIPE2_EXCLUDE,verbose=True)),
             ('tech_indicator3', de.CreateTechnicalIndicatorUsingTA(volume_ta=False,verbose=True)),
-            ('tech_indicator4', de.ConvertUnstableCols(basis_column=self.TA_BASIS_COL ,tolerance=self.TA_TOLERANCE,verbose=True)),
+            ('tech_indicator4', de.ConvertUnstableCols(basis_column=self.TA_BASIS_COL ,ohlc_columns = self.OHLC_COLUMNS,tolerance=self.TA_TOLERANCE,using_bin_transform=False,verbose=True)),
             ])
 
 
