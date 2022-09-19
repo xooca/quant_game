@@ -1,6 +1,6 @@
 model_metadata:
   model_prefix: pycaret
-  model_spec: modelling.model_pycaret
+  model_spec: modelling.model_pycaret_v3
   combine_train_valid: True
   presets: good_quality
   print_option: print
