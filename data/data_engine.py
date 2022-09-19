@@ -2,6 +2,7 @@ from re import A
 from statistics import mean
 from tabnanny import verbose
 #from signal import Signal
+from sklearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 import numpy as np
@@ -198,6 +199,35 @@ class LabelCreator_Light(BaseEstimator, TransformerMixin):
             return '-30to-80'
         elif val <= -80:
             return 'below80'
+        else:
+            return 'unknown'
+
+    def transform(self, df):
+        #df.index = pd.to_datetime(df.index)
+        df.index = pd.DatetimeIndex(df.index)
+        df = df.sort_index()
+        df = df[~df.index.duplicated(keep='first')]
+        df[self.label_name] = df.shift(self.shift, freq=self.freq)[self.shift_column].subtract(df[self.shift_column]).apply(self.label_generator)  
+        print_log(f"Shape of dataframe after transform is {df.shape}") 
+        return df
+
+class LabelCreator_Super_Light(BaseEstimator, TransformerMixin):
+    def __init__(self, freq='1min',shift=-15,shift_column='close'):
+        self.freq = freq
+        self.shift = shift
+        self.shift_column = shift_column
+        self.label_name = f'label_{shift}_{freq}_{shift_column}_SL'
+        
+    def fit(self, X, y=None):
+        return self    # Nothing to do in fit in this scenario
+
+    def label_generator(self,val):
+        if val <= 30 and val>=-30:
+            return 'neutral'
+        elif val > 30:
+            return 'call'
+        elif val < -30:
+            return 'put'
         else:
             return 'unknown'
 
@@ -1284,4 +1314,39 @@ class GapOpenMinuteChart(BaseEstimator, TransformerMixin):
         df = pd.merge_asof(df, pd.concat(merge_dict,axis=1), left_index=True, right_index=True)
         if self.verbose:
             print_log(f"Shape of dataframe after GapOpenMinuteChart is {df.shape}") 
+        return df
+class ConvertUnstableCols(BaseEstimator, TransformerMixin):
+    def __init__(self,basis_column='close' ,tolerance=17000,verbose=True):
+        self.basis_column = basis_column
+        self.tolerance = tolerance
+        self.verbose = verbose
+        
+    def fit(self, df, y=None):
+        self.unstable_cols = [col for col in [c for c in df.columns.tolist() if df[c].dtypes != 'object'] if np.mean(df[col]) > 17000 ]
+        return self     # Nothing to do in fit in this scenario
+
+    def transform(self, df):
+        print_log('*'*100)
+        df = df.sort_index()
+        if self.verbose:
+            print_log(f"Shape of dataframe before ConvertUnstableCols is {df.shape}")
+        merge_dict = {}
+        for col in self.columns:
+            merge_dict.update({f'CUC_{col}': df[self.basis_column] - df[col]})
+            #df[f'PerChg_{col}_{self.periods}_{self.freq}'] =df[col].pct_change(periods=self.periods,fill_method=self.fill_method,limit = self.limit,freq=self.freq)
+            print_log(f"CUC_{col} completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
+        if self.verbose:
+            print_log(f"Shape of dataframe after ConvertUnstableCols is {df.shape}") 
+
+        for col in self.unstable_cols:
+            df[f'CUC_{col}'] = df[self.basis_column] - df[col]
+        bt_pipe = Pipeline([
+            ('bt1', BinningTransform(columns= self.unstable_cols,window=15,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
+            ('bt2', BinningTransform(columns= self.unstable_cols,window=30,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
+            ('bt3', BinningTransform(columns= self.unstable_cols,window=45,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
+            ('bt4', BinningTransform(columns= self.unstable_cols,window=60,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True))
+                ])
+        df = bt_pipe.fit_transform(df)
+        df = df.drop(self.unstable_cols,axis=1)
         return df
