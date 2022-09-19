@@ -34,7 +34,11 @@ class modelling(BaseModel):
         self.previous_load_tuned = self.config.model.model_metadata.previous_load_tuned
 
     def initial_setup(self): 
-        self.experiment_setup = setup(data = self.train, **self.setup)
+        self.setup = dict(self.setup)
+        self.setup['data'] = self.train
+        if self.test is not None:
+            self.setup['test_data'] = self.test
+        self.experiment_setup = setup(**self.setup)
 
     def initial_setup_v1(self): 
         if self.previous_load_setup:
@@ -211,7 +215,7 @@ class modelling(BaseModel):
         if check_metric_flag:
             check_metric_arg = dict(self.config.model.trainer.check_metric)
             check_metric_arg['actual'] = test[self.target_column]
-            check_metric_arg['prediction'] = self.prediction['Label']
+            check_metric_arg['prediction'] = prediction['Label']
             pred_metric = check_metric(**check_metric_arg)
         return prediction,pred_metric
 
@@ -255,11 +259,9 @@ class modelling(BaseModel):
 
     def trainer(self):
         #self.model_spec_obj = self.model_spec.modelling(self.model_config)
-        dataset_args = dict(self.config.model.data.splits)
-        self.define_dataset(**dataset_args)
-        du.print_log("******** Data definition Completed ************",self.using_print)
-        self.initial_setup()
-        du.print_log("******** Setup Completed ************",self.using_print)
+
+        #self.initial_setup()
+        #du.print_log("******** Setup Completed ************",self.using_print)
         self.model_creation()
         du.print_log("******** Model Creation Completed ************",self.using_print)
         self.model_tuning(from_compare=False)

@@ -29,7 +29,7 @@ data:
     load_train: True
     load_valid: False
     load_test: True
-  sampling_type: frac
+  sampling_type: nothing
   sampling_frac: 0.4
   target_column: label_-45_1min_close
   drop_columns: [label_-30_1min_close,label_-60_1min_close,'label_-15_1min_close','Unnamed: 0',HILOl_13_21,HILOs_13_21,MCGD_10,PSARl_0.02_0.2,PSARs_0.02_0.2,QQEl_14_5_4.236,QQEs_14_5_4.236,SUPERTl_7_3.0,SUPERTs_7_3.0,PVDR_close_w,PVDR_close_w_MAX_MIN,PVDR_open_w,PVDR_open_w_MAX_MIN,PVDR_high_w,PVDR_high_w_MAX_MIN,PVDR_low_w,PVDR_low_w_MAX_MIN]
@@ -52,24 +52,75 @@ trainer:
     presets: good_quality
   setup:
     target: ${model.data.target_column}
+    train_size: 0.7
     preprocess: True
-    normalize: True 
+    imputation_type: iterative
+    iterative_imputation_iters: 5
+    categorical_features: null
+    categorical_imputation: constant
+    categorical_iterative_imputer: lightgbm
+    ordinal_features: null
+    high_cardinality_features: null
+    high_cardinality_method: frequency
+    numeric_features: null
+    numeric_imputation: mean
+    numeric_iterative_imputer: lightgbm
+    date_features: null
+    ignore_features: null
+    normalize: False
+    normalize_method: zscore
     transformation: True
-    ignore_low_variance: True      
-    feature_selection: True
+    transformation_method: yeo-johnson
+    handle_unknown_categorical: True
+    unknown_categorical_method: least_frequent
+    pca: False
+    pca_method: kernel
+    pca_components: null
+    ignore_low_variance: True
+    combine_rare_levels: True
+    rare_level_threshold: 0.1
+    bin_numeric_features: null
+    remove_outliers: False
+    outliers_threshold: 0.05
     remove_multicollinearity: True
-    multicollinearity_threshold: 0.90
-    feature_interaction: False
-    feature_ratio: False
-    polynomial_features: False
-    trigonometry_features: False
-    combine_rare_levels: False
-    create_clusters: False
-    imputation_type: 'iterative'
+    multicollinearity_threshold: 0.9
+    remove_perfect_collinearity: True
+    create_clusters: True
+    cluster_iter: 20
+    polynomial_features: True
+    polynomial_degree: 2
+    trigonometry_features: True
+    polynomial_threshold: 0.1
+    group_features: null
+    group_names: null
+    feature_selection: True
+    feature_selection_threshold: 0.8
+    feature_selection_method: boruta
+    feature_interaction: True
+    feature_ratio: True
+    interaction_threshold: 0.01
     fix_imbalance: False
-    silent: True
-    session_id: 123
+    fix_imbalance_method: null
+    data_split_shuffle: True
+    data_split_stratify: True
+    fold_strategy: stratifiedkfold
+    fold: 10
+    fold_shuffle: False
+    fold_groups: null
+    n_jobs: -1
     use_gpu: False
+    custom_pipeline: null
+    html: True
+    session_id: 1234
+    log_experiment: False
+    experiment_name: Lighgbm_16min
+    experiment_custom_tags: null
+    log_plots: False
+    log_profile: False
+    log_data: False
+    silent: False
+    verbose: True
+    profile: False
   compare_models:
     include: ['xgboost', 'lightgbm','catboost','et','dummy','rf', 'knn','ada']
     fold: 3
@@ -132,5 +183,3 @@ trainer:
     fold: 4
     method: soft
     choose_better: True 
-
-    

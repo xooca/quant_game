@@ -1,4 +1,4 @@
 model:
-  overrides: ["+data=data_exp","+model=pycaret"]
+  overrides: ["+data=data_exp","+model=pycaret_v2"]
   version_base: None 
   config_path: "../config/banknifty/"

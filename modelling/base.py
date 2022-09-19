@@ -31,6 +31,9 @@ class BaseModel:
         return df
 
     def define_dataset(self,load_train = True,load_valid = True,load_test=False):
+        self.valid = None
+        self.train = None
+        self.test = None
         if load_train:
             self.train = pd.read_csv(self.train_save_path)
             self.train = self.train[self.train[self.target_column]!='unknown']
