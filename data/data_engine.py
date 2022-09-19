@@ -1331,16 +1331,14 @@ class ConvertUnstableCols(BaseEstimator, TransformerMixin):
         if self.verbose:
             print_log(f"Shape of dataframe before ConvertUnstableCols is {df.shape}")
         merge_dict = {}
-        for col in self.columns:
+        print_log(f"Number of unstable columns are {len(self.unstable_cols)}")
+        for col in self.unstable_cols:
             merge_dict.update({f'CUC_{col}': df[self.basis_column] - df[col]})
             #df[f'PerChg_{col}_{self.periods}_{self.freq}'] =df[col].pct_change(periods=self.periods,fill_method=self.fill_method,limit = self.limit,freq=self.freq)
             print_log(f"CUC_{col} completed")
         df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             print_log(f"Shape of dataframe after ConvertUnstableCols is {df.shape}") 
-
-        for col in self.unstable_cols:
-            df[f'CUC_{col}'] = df[self.basis_column] - df[col]
         bt_pipe = Pipeline([
             ('bt1', BinningTransform(columns= self.unstable_cols,window=15,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
             ('bt2', BinningTransform(columns= self.unstable_cols,window=30,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),

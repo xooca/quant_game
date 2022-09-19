@@ -17,8 +17,8 @@ class pipelines:
         self.TECHNICAL_IND_PATTERN = list(dc.data.common.technical_indicator_col_pattern)
         self.SELECTED_COLUMNS = list(dc.data.common.selected_columns)
         self.TA_PIPE2_EXCLUDE = list(dc.data.common.ta_pipe2_exclude)
-        self.TA_BASIS_COL = list(dc.data.tech_ind.basis_column)
-        self.TA_TOLERANCE = list(dc.data.tech_ind.tolerance)
+        self.TA_BASIS_COL = dc.data.tech_ind.basis_column
+        self.TA_TOLERANCE = dc.data.tech_ind.tolerance
     
     def pipeline_definitions(self):
         self.start_pipeline = Pipeline([
@@ -172,4 +172,8 @@ class pipelines:
             ('labelgenerator_2', de.LabelCreator_Light(freq='1min',shift=-30,shift_column=self.dc.data.common.label_generator_col)),
             ('labelgenerator_3', de.LabelCreator_Light(freq='1min',shift=-60,shift_column=self.dc.data.common.label_generator_col)),
             ('labelgenerator_4', de.LabelCreator_Light(freq='1min',shift=-45,shift_column=self.dc.data.common.label_generator_col)),
+            ('labelgenerator_5', de.LabelCreator_Super_Light(freq='1min',shift=-15,shift_column=self.dc.data.common.label_generator_col)),
+            ('labelgenerator_6', de.LabelCreator_Super_Light(freq='1min',shift=-30,shift_column=self.dc.data.common.label_generator_col)),
+            ('labelgenerator_7', de.LabelCreator_Super_Light(freq='1min',shift=-60,shift_column=self.dc.data.common.label_generator_col)),
+            ('labelgenerator_8', de.LabelCreator_Super_Light(freq='1min',shift=-45,shift_column=self.dc.data.common.label_generator_col)),
             ])
