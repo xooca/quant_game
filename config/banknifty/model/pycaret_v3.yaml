@@ -1,6 +1,6 @@
 model_metadata:
   model_prefix: pycaret
-  model_spec: modelling.model_pycaret_v3
+  model_spec: modelling.model_pycaret
   combine_train_valid: True
   presets: good_quality
   print_option: print
@@ -31,7 +31,7 @@ data:
     load_test: True
   sampling_type: nothing
   sampling_frac: 0.4
-  target_column: label_-45_1min_close
+  target_column: label_-15_1min_close_SL
   label_columns: [label_-30_1min_close,label_-60_1min_close,'label_-15_1min_close','label_-45_1min_close',label_-30_1min_close_SL,label_-60_1min_close_SL,'label_-15_1min_close_SL','label_-45_1min_close_SL']
   drop_columns: ['Unnamed: 0',HILOl_13_21,HILOs_13_21,MCGD_10,PSARl_0.02_0.2,PSARs_0.02_0.2,QQEl_14_5_4.236,QQEs_14_5_4.236,SUPERTl_7_3.0,SUPERTs_7_3.0,PVDR_close_w,PVDR_close_w_MAX_MIN,PVDR_open_w,PVDR_open_w_MAX_MIN,PVDR_high_w,PVDR_high_w_MAX_MIN,PVDR_low_w,PVDR_low_w_MAX_MIN]
   id_col: None

@@ -1316,10 +1316,10 @@ class GapOpenMinuteChart(BaseEstimator, TransformerMixin):
             print_log(f"Shape of dataframe after GapOpenMinuteChart is {df.shape}") 
         return df
 class ConvertUnstableCols(BaseEstimator, TransformerMixin):
-    def __init__(self,basis_column='close',ohlc_columns = ['close','open','high','low'],tolerance=17000,using_bin_transform=False,verbose=True):
+    def __init__(self,basis_column='close',ohlc_columns = ['close','open','high','low'],tolerance=17000,transform_option='rank',verbose=True):
         self.basis_column = basis_column
         self.tolerance = tolerance
-        self.using_bin_transform = using_bin_transform
+        self.transform_option = transform_option
         self.ohlc_columns = ohlc_columns
         self.verbose = verbose
         
@@ -1342,19 +1342,26 @@ class ConvertUnstableCols(BaseEstimator, TransformerMixin):
         df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
         if self.verbose:
             print_log(f"Shape of dataframe after ConvertUnstableCols is {df.shape}") 
-        if self.using_bin_transform:
+        if self.transform_option == 'bint':
             bt_pipe = Pipeline([
                 ('bt1', BinningTransform(columns= self.unstable_cols,window=15,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
                 ('bt2', BinningTransform(columns= self.unstable_cols,window=30,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
                 ('bt3', BinningTransform(columns= self.unstable_cols,window=45,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True)),
                 ('bt4', BinningTransform(columns= self.unstable_cols,window=60,min_period=None,get_current_row_bin=True,n_bins=5,verbose=True))
                     ])
-        else:
+        elif self.transform_option == 'rank':
             bt_pipe = Pipeline([
                 ('bt1', RollingRank(columns= self.unstable_cols,window=15,min_periods=None,verbose=True)),
                 ('bt2', RollingRank(columns= self.unstable_cols,window=30,min_periods=None,verbose=True)),
                 ('bt3', RollingRank(columns= self.unstable_cols,window=45,min_periods=None,verbose=True)),
                 ('bt4', RollingRank(columns= self.unstable_cols,window=60,min_periods=None,verbose=True))
+                    ])
+        else:
+            bt_pipe = Pipeline([
+                ('bt1', PercentageChange(columns= self.unstable_cols,periods=15, fill_method='pad', limit=None, freq=None,verbose=True)),
+                ('bt2', PercentageChange(columns= self.unstable_cols,periods=30, fill_method='pad', limit=None, freq=None,verbose=True)),
+                ('bt3', PercentageChange(columns= self.unstable_cols,periods=45, fill_method='pad', limit=None, freq=None,verbose=True)),
+                ('bt4', PercentageChange(columns= self.unstable_cols,periods=60, fill_method='pad', limit=None, freq=None,verbose=True))
                     ])
         df = bt_pipe.fit_transform(df)
         df = df.drop(self.unstable_cols,axis=1)
