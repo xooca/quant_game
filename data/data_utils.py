@@ -542,7 +542,7 @@ class execute_data_pipeline:
             master_df = pd.merge(master_df,tmpdf, how='inner', left_index=True, right_index=True)
         #master_df.columns = [col if col != 'Unnamed: 0' else 'date_time' for col in master_df.columns.tolist()]
         if split_flag:
-            if self.config.model.data.splits_type == 'normal':
+            if self.data_config.model.data.splits_type == 'normal':
                 print_log(f"Started splitting data into train, test and validation",self.using_print)
                 if self.data_config.data.data_split.test_percent is None:
                     test_size = 0.2
@@ -583,7 +583,7 @@ class execute_data_pipeline:
                 train.to_csv(self.data_config.data.paths.train_save_path)
                 valid.to_csv(self.data_config.data.paths.valid_save_path)
                 test.to_csv(self.data_config.data.paths.test_save_path)
-                
+
 class datacleaner:
     def __init__(self, df, targetcol, id_cols=None, cat_threshold=100):
         self.df_train = df
