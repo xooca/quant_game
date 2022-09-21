@@ -214,7 +214,7 @@ class modelling(BaseModel):
         pred_metric = None
         if check_metric_flag:
             check_metric_arg = dict(self.config.model.trainer.check_metric)
-            check_metric_arg['actual'] = test[self.target_column]
+            check_metric_arg['actual'] = test[self.config.model.data.target_column]
             check_metric_arg['prediction'] = prediction['Label']
             pred_metric = check_metric(**check_metric_arg)
         return prediction,pred_metric
