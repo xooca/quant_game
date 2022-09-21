@@ -571,12 +571,12 @@ class execute_data_pipeline:
                         valid.to_csv(self.data_config.data.paths.valid_save_path)
                         print_log(f"Validation data saved at location {self.data_config.data.paths.valid_save_path}",self.using_print)
             else:
-                train_date_range_ul= self.config.model.data.splits_details.train_date_range_ul
-                train_date_range_ll= self.config.model.data.splits_details.train_date_range_ll
-                test_date_range_ul = self.config.model.data.splits_details.test_date_range_ul
-                test_date_range_ll = self.config.model.data.splits_details.test_date_range_ll
-                valid_date_range_ul= self.config.model.data.splits_details.valid_date_range_ul
-                valid_date_range_ll= self.config.model.data.splits_details.valid_date_range_ll
+                train_date_range_ul= self.data_config.model.data.splits_details.train_date_range_ul
+                train_date_range_ll= self.data_config.model.data.splits_details.train_date_range_ll
+                test_date_range_ul = self.data_config.model.data.splits_details.test_date_range_ul
+                test_date_range_ll = self.data_config.model.data.splits_details.test_date_range_ll
+                valid_date_range_ul= self.data_config.model.data.splits_details.valid_date_range_ul
+                valid_date_range_ll= self.data_config.model.data.splits_details.valid_date_range_ll
                 train = master_df[master_df.index.to_series().between(train_date_range_ll, train_date_range_ul)]
                 test = master_df[master_df.index.to_series().between(test_date_range_ll, test_date_range_ul)]
                 valid = master_df[master_df.index.to_series().between(valid_date_range_ll, valid_date_range_ul)]
