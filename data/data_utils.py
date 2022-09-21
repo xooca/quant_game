@@ -19,11 +19,108 @@ import importlib
 from sklearn.model_selection import train_test_split
 import zipfile,fnmatch,os
 from pathlib import Path
+import string
+import re
+import gc
 
 warnings.filterwarnings('ignore')
 
 os.getcwd()
 pd.options.display.max_columns = None
+
+def downcast_df_float_columns(df):
+    list_of_columns = list(df.select_dtypes(include=["float64"]).columns)
+    if len(list_of_columns)>=1:        
+        for col in list_of_columns:
+            df[col] = pd.to_numeric(df[col], downcast="float")
+    else:
+        print("no columns to downcast")
+    gc.collect()
+    return df
+
+def downcast_df_int_columns(df):
+    list_of_columns = list(df.select_dtypes(include=["int32", "int64"]).columns)
+    if len(list_of_columns)>=1:        
+        for col in list_of_columns:
+            df[col] = pd.to_numeric(df[col], downcast="integer")
+    else:
+        print("no columns to downcast")
+    gc.collect()
+    return df
+
+def reduce_mem_usage_v1(df):
+    start_mem_usg = df.memory_usage().sum() / 1024**2 
+    print("Memory usage of properties dataframe is :",start_mem_usg," MB")
+    for var in df.columns.tolist():
+        if df[var].dtype != object:
+            maxi = df[var].max()
+            if maxi < 255:
+                df[var] = df[var].astype(np.uint8)
+                print(var,"converted to uint8")
+            elif maxi < 65535:
+                df[var] = df[var].astype(np.uint16)
+                print(var,"converted to uint16")
+            elif maxi < 4294967295:
+                df[var] = df[var].astype(np.uint32)
+                print(var,"converted to uint32")
+            else:
+                df[var] = df[var].astype(np.uint64)
+                print(var,"converted to uint64")
+    mem_usg = df.memory_usage().sum() / 1024**2 
+    print("Memory usage is: ",mem_usg," MB")
+    print("This is ",100*mem_usg/start_mem_usg,"% of the initial size")
+    return df
+
+def reduce_mem_usage(df):
+    start_mem = df.memory_usage().sum() / 1024**2
+    print('Memory usage of dataframe is {:.2f} MB'.format(start_mem))
+    for col in df.columns:
+        col_type = df[col].dtype
+        if col_type != object:
+            if str(col_type)[:3] == 'int':
+                df[col] = df[col].astype(np.int32)
+            if str(col_type)[:5] == 'float':
+                df[col] = df[col].astype(np.float32)
+    end_mem = df.memory_usage().sum() / 1024**2
+    print('Memory usage after optimization is: {:.2f} MB'.format(end_mem))
+    print('Decreased by {:.1f}%'.format(100 * (start_mem - end_mem) / start_mem))
+    return df
+
+def reduce_mem_usage_v2(df):
+    start_mem = df.memory_usage().sum() / 1024**2
+    print('Memory usage of dataframe is {:.2f} MB'.format(start_mem))
+    for col in df.columns:
+        col_type = df[col].dtype
+        if col_type != object:
+            c_min = df[col].min()
+            c_max = df[col].max()
+            if str(col_type)[:3] == 'int':
+                if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
+                    df[col] = df[col].astype(np.int8)
+                elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
+                    df[col] = df[col].astype(np.int16)
+                elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
+                    df[col] = df[col].astype(np.int32)
+                elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
+                    df[col] = df[col].astype(np.int64)  
+            else:
+                if c_min > np.finfo(np.float16).min and c_max < np.finfo(np.float16).max:
+                    df[col] = df[col].astype(np.float16)
+                elif c_min > np.finfo(np.float32).min and c_max < np.finfo(np.float32).max:
+                    df[col] = df[col].astype(np.float32)
+                else:
+                    df[col] = df[col].astype(np.float64)
+        else:
+            df[col] = df[col].astype('category')
+
+    end_mem = df.memory_usage().sum() / 1024**2
+    print('Memory usage after optimization is: {:.2f} MB'.format(end_mem))
+    print('Decreased by {:.1f}%'.format(100 * (start_mem - end_mem) / start_mem))
+    return df
+
+def remove_specialchars(text):
+    text_re = re.escape(string.punctuation)
+    return re.sub(r'['+text_re+']', '',text)
 
 def nullcolumns(df):
     t = pd.DataFrame(df[df.columns[df.isnull().any()]].isnull().sum()).reset_index()
@@ -38,7 +135,7 @@ def checknans(df,threshold=100):
             print(f"{col}.... {sum(np.isnan(df.train[col]))}")
             nan_cols.append(col)
     return nan_cols
-    
+
 def initialize_config(overrides,version_base=None, config_path="../config"):
     initialize(config_path=config_path)
     dc=compose(overrides= overrides)
@@ -443,36 +540,50 @@ class execute_data_pipeline:
             tmp_cols = [col for col in tmpdf.columns.tolist() if col not in tmp_exclude_cols]
             tmpdf = tmpdf[tmp_cols]
             master_df = pd.merge(master_df,tmpdf, how='inner', left_index=True, right_index=True)
-
+        #master_df.columns = [col if col != 'Unnamed: 0' else 'date_time' for col in master_df.columns.tolist()]
         if split_flag:
-            print_log(f"Started splitting data into train, test and validation",self.using_print)
-            if self.data_config.data.data_split.test_percent is None:
-                test_size = 0.2
+            if self.config.model.data.splits_type == 'normal':
+                print_log(f"Started splitting data into train, test and validation",self.using_print)
+                if self.data_config.data.data_split.test_percent is None:
+                    test_size = 0.2
+                else:
+                    test_size = self.data_config.data.data_split.test_percent
+                print_log(f"Test split size is {test_size}",self.using_print)
+                if self.data_config.data.data_split.stratify_col is not None:
+                    print_log(f"Stratify column is {self.data_config.data.data_split.stratify_col}",self.using_print)
+                    train, test = train_test_split(master_df, test_size=test_size,stratify=master_df[self.data_config.data.data_split.stratify_col])
+                    test.to_csv(self.data_config.data.paths.test_save_path)
+                    print_log(f"Test data saved at location {self.data_config.data.paths.test_save_path}",self.using_print)
+                    if self.data_config.data.data_split.valid_percent is not None:
+                        print_log(f"Valid split size is {self.data_config.data.data_split.valid_percent}",self.using_print)
+                        train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent,stratify=train[self.data_config.data.data_split.stratify_col])
+                        train.to_csv(self.data_config.data.paths.train_save_path)
+                        print_log(f"Train data saved at location {self.data_config.data.paths.train_save_path}",self.using_print)
+                        valid.to_csv(self.data_config.data.paths.valid_save_path)
+                        print_log(f"Validation data saved at location {self.data_config.data.paths.valid_save_path}",self.using_print)
+                else:
+                    train, test = train_test_split(master_df, test_size=test_size)
+                    test.to_csv(self.data_config.data.paths.test_save_path)
+                    if self.data_config.data.data_split.valid_percent is not None:
+                        train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent)
+                        train.to_csv(self.data_config.data.paths.train_save_path)
+                        print_log(f"Train data saved at location {self.data_config.data.paths.train_save_path}",self.using_print)
+                        valid.to_csv(self.data_config.data.paths.valid_save_path)
+                        print_log(f"Validation data saved at location {self.data_config.data.paths.valid_save_path}",self.using_print)
             else:
-                test_size = self.data_config.data.data_split.test_percent
-            print_log(f"Test split size is {test_size}",self.using_print)
-            if self.data_config.data.data_split.stratify_col is not None:
-                print_log(f"Stratify column is {self.data_config.data.data_split.stratify_col}",self.using_print)
-                train, test = train_test_split(master_df, test_size=test_size,stratify=master_df[self.data_config.data.data_split.stratify_col])
+                train_date_range_ul= self.config.model.data.splits_details.train_date_range_ul
+                train_date_range_ll= self.config.model.data.splits_details.train_date_range_ll
+                test_date_range_ul = self.config.model.data.splits_details.test_date_range_ul
+                test_date_range_ll = self.config.model.data.splits_details.test_date_range_ll
+                valid_date_range_ul= self.config.model.data.splits_details.valid_date_range_ul
+                valid_date_range_ll= self.config.model.data.splits_details.valid_date_range_ll
+                train = master_df[master_df.index.to_series().between(train_date_range_ll, train_date_range_ul)]
+                test = master_df[master_df.index.to_series().between(test_date_range_ll, test_date_range_ul)]
+                valid = master_df[master_df.index.to_series().between(valid_date_range_ll, valid_date_range_ul)]
+                train.to_csv(self.data_config.data.paths.train_save_path)
+                valid.to_csv(self.data_config.data.paths.valid_save_path)
                 test.to_csv(self.data_config.data.paths.test_save_path)
-                print_log(f"Test data saved at location {self.data_config.data.paths.test_save_path}",self.using_print)
-                if self.data_config.data.data_split.valid_percent is not None:
-                    print_log(f"Valid split size is {self.data_config.data.data_split.valid_percent}",self.using_print)
-                    train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent,stratify=train[self.data_config.data.data_split.stratify_col])
-                    train.to_csv(self.data_config.data.paths.train_save_path)
-                    print_log(f"Train data saved at location {self.data_config.data.paths.train_save_path}",self.using_print)
-                    valid.to_csv(self.data_config.data.paths.valid_save_path)
-                    print_log(f"Validation data saved at location {self.data_config.data.paths.valid_save_path}",self.using_print)
-            else:
-                train, test = train_test_split(master_df, test_size=test_size)
-                test.to_csv(self.data_config.data.paths.test_save_path)
-                if self.data_config.data.data_split.valid_percent is not None:
-                    train, valid = train_test_split(train, test_size=self.data_config.data.data_split.valid_percent)
-                    train.to_csv(self.data_config.data.paths.train_save_path)
-                    print_log(f"Train data saved at location {self.data_config.data.paths.train_save_path}",self.using_print)
-                    valid.to_csv(self.data_config.data.paths.valid_save_path)
-                    print_log(f"Validation data saved at location {self.data_config.data.paths.valid_save_path}",self.using_print)
-
+                
 class datacleaner:
     def __init__(self, df, targetcol, id_cols=None, cat_threshold=100):
         self.df_train = df

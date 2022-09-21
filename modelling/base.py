@@ -22,12 +22,15 @@ class BaseModel:
         self.test_save_path = self.config.data.paths.test_save_path
 
     def sampling(self,df):
-        df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        df.dropna(inplace=True)
         du.print_log(f"Sampling option is {self.sampling_type} ",self.using_print)
         if self.sampling_type == 'frac':
+            #df.replace([np.inf, -np.inf], np.nan, inplace=True)
+            #df.dropna(inplace=True)
             df = df.groupby(self.target_column, group_keys=False).apply(lambda x: x.sample(frac=self.sampling_frac))
+
         elif self.sampling_type == 'count':
+            #df.replace([np.inf, -np.inf], np.nan, inplace=True)
+            #df.dropna(inplace=True)
             df = df.groupby(self.target_column, group_keys=False).apply(lambda x: x.sample(self.sampling_frac))
         else:
             print("No sampling done")
@@ -42,8 +45,10 @@ class BaseModel:
         self.label_columns = list(self.label_columns)
         self.label_columns = [col for col in self.label_columns if col != self.target_column]
         self.drop_columns = list(set(self.drop_columns + self.label_columns))
+        du.print_log(f"Length of drop columns is {len(self.drop_columns)}",self.using_print)
         if load_train:
-            self.train = pd.read_csv(self.train_save_path)
+            self.train = pd.read_csv(self.train_save_path,parse_dates=True,index_col='Unnamed: 0')
+            self.train = du.reduce_mem_usage(self.train)
             self.train = self.train[self.train[self.target_column]!='unknown']
             if len(self.drop_columns)>0:
                 final_col = [col for col in self.train.columns.tolist() if col not in self.drop_columns]
@@ -53,7 +58,8 @@ class BaseModel:
             du.print_log(f"Train data creation is done",self.using_print)
             du.print_log(f"Train target value count is {self.train[self.target_column].value_counts()}",self.using_print)
         if load_valid:
-            self.valid = pd.read_csv(self.valid_save_path)
+            self.valid = pd.read_csv(self.valid_save_path,parse_dates=True,index_col='Unnamed: 0')
+            self.valid = du.reduce_mem_usage(self.valid)
             self.valid = self.valid[self.valid[self.target_column]!='unknown']
             if len(self.drop_columns)>0:
                 final_col = [col for col in self.valid.columns.tolist() if col not in self.drop_columns]
@@ -63,7 +69,8 @@ class BaseModel:
             du.print_log(f"Valid data creation is done",self.using_print)
             du.print_log(f"Valid target value count is {self.valid[self.target_column].value_counts()}",self.using_print)
         if load_test:
-            self.test = pd.read_csv(self.test_save_path)
+            self.test = pd.read_csv(self.test_save_path,parse_dates=True,index_col='Unnamed: 0')
+            self.test = du.reduce_mem_usage(self.test)
             self.test = self.test[self.test[self.target_column]!='unknown']
             if len(self.drop_columns)>0:
                 final_col = [col for col in self.test.columns.tolist() if col not in self.drop_columns]
