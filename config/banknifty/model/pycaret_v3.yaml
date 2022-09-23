@@ -19,25 +19,25 @@ model_metadata:
   model_creation_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}_creation.pkl
   model_tuned_save_path: ${model.model_metadata.base_model_loc}${model.model_metadata.model_name}_tuned.pkl
 
-  previous_load_setup: True
-  previous_load_comparison: True
-  previous_load_creation: True
-  previous_load_tuned: True
+  previous_load_setup: False
+  previous_load_comparison: False
+  previous_load_creation: False
+  previous_load_tuned: False
 
 data:
   splits:
     load_train: True
     load_valid: True
-    load_test: False
+    load_test: True
   splits_type: time_based
   splits_details:
-    train_date_range_ll: '2013-02-01'
-    train_date_range_ul: '2022-03-31'
-    test_date_range_ll: '2022-04-01'
-    test_date_range_ul: '2022-06-30'
-    valid_date_range_ll: '2022-07-01'
+    train_date_range_ll: '2016-02-01'
+    train_date_range_ul: '2021-10-31'
+    test_date_range_ll: '2021-11-01'
+    test_date_range_ul: '2022-04-30'
+    valid_date_range_ll: '2022-04-01'
     valid_date_range_ul: '2022-08-31'
-  sampling_type: frac
+  sampling_type: others
   sampling_frac: 0.4
   target_column: label_-15_1min_close_SL
   label_columns: [label_-30_1min_close,label_-60_1min_close,'label_-15_1min_close','label_-45_1min_close',label_-30_1min_close_SL,label_-60_1min_close_SL,'label_-15_1min_close_SL','label_-45_1min_close_SL']
@@ -112,7 +112,7 @@ trainer:
     fix_imbalance_method: null
     data_split_shuffle: True
     data_split_stratify: True
-    fold_strategy: stratifiedkfold
+    fold_strategy: timeseries
     fold: 10
     fold_shuffle: False
     fold_groups: null

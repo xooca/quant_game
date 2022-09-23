@@ -36,8 +36,8 @@ class modelling(BaseModel):
     def initial_setup(self): 
         self.setup = dict(self.setup)
         self.setup['data'] = self.train
-        if self.test is not None:
-            self.setup['test_data'] = self.test
+        if self.valid is not None:
+            self.setup['test_data'] = self.valid
         self.experiment_setup = setup(**self.setup)
 
     def initial_setup_v1(self): 
