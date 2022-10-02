@@ -4,6 +4,8 @@ from pycaret.classification import setup,compare_models,create_model,evaluate_mo
 from pycaret.utils import check_metric
 import numpy as np
 import data.data_utils as du
+
+
 class BaseModel:
     def __init__(self,config):
         self.config = config

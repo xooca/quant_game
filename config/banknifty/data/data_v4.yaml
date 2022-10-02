@@ -1,0 +1,77 @@
+paths:
+  ticker_name: 'banknifty'
+  data_create_date: '2022-09-07'
+  data_files: "/content/drive/MyDrive/Work/trading/data_files/"
+  base_data_loc: "${data.paths.data_files}${data.paths.ticker_name}/${data.paths.data_create_date}/"
+  input_path: "${data.raw_data.raw_data_save_path}"
+
+initial_data_setup:
+  raw_data_input_path: "${data.paths.data_files}source_files/"
+  zip_file_pattern: '*.zip'
+  data_pattern: '*BANKNIFTY.txt'
+  source_data: "${data.paths.data_files}input/${data.paths.ticker_name}/${data.paths.data_create_date}/"
+  raw_data_save_path: "${data.raw_data.source_data}${data.paths.ticker_name}.csv"
+  initial_columns: ['name','date','time','open','high','low','close']
+
+training_data_pipeline:
+  train_data_prefix: training
+  train_base_path: "${data.paths.base_data_loc}${data.training_data_pipeline.training_data_prefix}/"
+  train_initial_file_path: "${data.training_data_pipeline.training_base_path}${data.paths.ticker_name}_initial.csv"
+  train_pipeinfo: "${data.training_data_pipeline.training_base_path}/pipe.pkl"
+  train_training_data_output_path: "${data.training_data_pipeline.training_base_path}train.csv"
+  train_testing_data_output_path: "${data.training_data_pipeline.training_base_path}test.csv"
+  train_validation_data_output_path: "${data.training_data_pipeline.training_base_path}valid.csv"
+  train_stratify_col: ${model.data.target_column}
+  train_testing_percent: 0.3
+  train_validation_percent: 0.3
+  train_datapipeline_spec: data.feature_specs.feature_spec_v3
+
+prediction_data_pipeline:
+  predict_data_prefix: prediction
+  predict_base_path: "${data.paths.base_data_loc}${data.daily_data_pipeline.prediction_data_prefix}/"
+  predict_initial_file_path: "${data.daily_data_pipeline.prediction_base_path}/${data.paths.ticker_name}_initial.csv"
+  predict_final_data_path: "${data.daily_data_pipeline.prediction_base_path}/${data.paths.ticker_name}_final.csv"
+
+generic:
+  verbose_type: print
+  data_prefix: None
+
+initial_pipeline: [generic_pipeline]
+
+datapipeline: 
+  pipeline1: [technical_ind_pre_pipe,technical_indicator_pipe,save_pipeline]
+  pipeline2: [rolling_values_pipe,last_tick_greater_values_pipe,save_pipeline]
+  pipeline3: [zscore_log_percentage_chg_pipe,rolling_rank_pipe,save_pipeline]
+  pipeline4: [bin_transform_pipe, positive_negative_pipe,rolling_stats_pipe,price_range_pipe,save_pipeline]
+  pipeline5: [label_creator_pipe,save_pipeline]
+
+datapipeline_details:
+  master_pipeline: pipeline1
+  merge_pipeline_to_master: [pipeline2,pipeline3,pipeline4,pipeline5]
+  pipeline1_exclude_cols: ${data.common.ohlc_column}
+  pipeline2_exclude_cols: ${data.common.ohlc_column}
+  pipeline3_exclude_cols: ${data.common.ohlc_column}
+  pipeline4_exclude_cols: ${data.common.ohlc_column}
+  pipeline5_exclude_cols: ${data.common.ohlc_column}
+
+common:
+  read_start_date: '2013-01-01'
+  read_end_date: '2022-08-30'
+  save_start_date: '2013-02-01'
+  save_end_date: None
+  ohlc_column: ['close','open','high','low']
+  selected_columns: ['close','open','high','low']
+  technical_indicator_col_pattern: ['momentum','volatile','transform','pattern','overlap']
+  label_generator_col:  'close'
+  ta_pipe2_exclude: ["pvo","vwap","vwma","ad","adosc","aobv","cmf","efi","eom","kvo","mfi","nvi","obv","pvi","pvol","pvr","pvt"]
+
+pdrhw:
+  hour_range: [['09:00','10:30'],['10:30','11:30'],['11:30','12:30'],['12:30','01:30'],['02:30', '15:30']]
+  range_type: ['price_range','price_deviation_max_first_col','price_deviation_min_first_col','price_deviation_max_second_col','price_deviation_min_second_col']
+
+pltbc:
+  breach_type: ['morethan','max']
+
+tech_ind:
+  basis_column: close
+  tolerance: 17000

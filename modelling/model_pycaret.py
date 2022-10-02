@@ -8,6 +8,11 @@ import data.data_utils as du
 import os
 import omegaconf
 
+from config.common import Config
+class CustomConfig(Config):
+    def initialize_all_config(self):
+        super(Config, self).initialize_all_config() 
+        self.pycaret_setup = self.config.trainer.setup
 class modelling(BaseModel):
     def __init__(self,config):
         BaseModel.__init__(self,config)

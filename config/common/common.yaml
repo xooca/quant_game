@@ -1,0 +1,10 @@
+endpoint:
+  base_url: https://www.alphavantage.co/query?
+  read_action: json
+endpoint_details:
+  function: TIME_SERIES_DAILY
+  symbol: SBIN.BSE
+  interval: 1min
+  outputsize: full
+  datatype: None
+  apikey: 90L05WAV2MO0OQ0V

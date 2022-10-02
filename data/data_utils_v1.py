@@ -2,6 +2,7 @@ from sklearn.pipeline import Pipeline
 import pickle
 import logging
 import requests
+import omegaconf
 #import data.data_config as dc
 from hydra import initialize, initialize_config_module, initialize_config_dir, compose
 import hydra
@@ -142,8 +143,8 @@ def initialize_config(overrides,version_base=None, config_path="../config"):
     dc=compose(overrides= overrides)
     return dc
 
-def print_log(log,using_print=True):
-    if using_print:
+def print_log(log,using_print='print'):
+    if using_print=='print':
         print(log)
     else:
         logging.info(log)
@@ -169,6 +170,7 @@ def save_object(object_path,obj):
     with open(object_path, 'wb') as handle:
         pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
         print_log(f"Object saved at location {object_path}")
+
 class initial_data_setup:
     def __init__(self,master_config):
         master_config = dict(master_config['master']['model'])
