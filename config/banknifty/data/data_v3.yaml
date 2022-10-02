@@ -14,7 +14,18 @@ paths:
   predict_data_path: None
   filtered_data_location: "${data.paths.base_data_loc}read_data/"
   filtered_data_location_file: "${data.paths.filtered_data_location}${data.paths.ticker_name}.csv"
+
+training_data_pipeline:
+  initial_pipeline_prefix: read_data
+  initial_pipeline_file_path: "${data.paths.base_data_loc}${data.paths.initial_pipeline_prefix}/${data.paths.ticker_name}.csv"
+  training_data_output_path: 
+
+daily_data_pipeline:
+  initial_pipeline_prefix: read_data
+  initial_pipeline_file_path: "${data.paths.base_data_loc}${data.paths.initial_pipeline_prefix}/${data.paths.ticker_name}.csv"
   use_filtered_loc_for_input: True
+  load_and_run_pipeline_output: ${data.paths.initial_pipeline_prefix}
+  load_and_run_pipeline_output_path: "${data.paths.base_data_loc}${data.paths.initial_pipeline_prefix}/${data.paths.ticker_name}.csv"
 
 raw_data:
   raw_data_input_path: "${data.paths.data_files}source_files/"

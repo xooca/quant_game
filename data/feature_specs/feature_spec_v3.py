@@ -10,6 +10,11 @@ from hydra import initialize, initialize_config_module, initialize_config_dir, c
 from omegaconf import OmegaConf
 import data.data_utils as du
 
+from config.common import Config
+class CustomConfig(Config):
+    def initialize_all_config(self):
+        super(Config, self).initialize_all_config() 
+        self.pycaret_setup = self.config.trainer.setup
 class pipelines:
     def __init__(self,dc):
         self.dc = dc
