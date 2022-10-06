@@ -31,3 +31,11 @@ class Config:
             exec(f"self.{k}='{v}'")
           else:
             exec(f"self.{k}={v}")
+
+class DefineConfig(Config):
+    def __init__(self,master_config_path):
+        Config.__init__(self,master_config_path)
+        self.initialize_all_config()
+        
+    def __call__(self):
+        self.initialize_all_config()
