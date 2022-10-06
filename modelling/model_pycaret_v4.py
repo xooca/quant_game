@@ -12,7 +12,6 @@ from config.common import Config
 class modelling(BaseModel):
     def __init__(self,config_obj):
         BaseModel.__init__(self,config_obj)
-        self.model_metadata = {}
         self.define_parameters_custom()
 
     def define_parameters_custom(self):
