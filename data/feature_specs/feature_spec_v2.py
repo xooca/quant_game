@@ -8,7 +8,7 @@ import numpy as np
 #import data.data_config as dc
 from hydra import initialize, initialize_config_module, initialize_config_dir, compose
 from omegaconf import OmegaConf
-import data.data_utils as du
+import data.data_utils_old as du
 
 class pipelines:
     def __init__(self,dc):

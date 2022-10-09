@@ -23,13 +23,6 @@ def print_log(log,using_print=True):
         print(log)
     else:
         logging.info(log)
-        
-def unzip_folders(rootPath,pattern):
-    for root, dirs, files in os.walk(rootPath):
-        for filename in fnmatch.filter(files, pattern):
-            print_log(os.path.join(root, filename))
-            zipfile.ZipFile(os.path.join(root, filename)).extractall(os.path.join(root, os.path.splitext(filename)[0]))
-            os.remove(os.path.join(root, filename))
 
 def convert_df_to_timeseries(df):
     df['date_time'] = df['date'].astype(str) + ' ' + df['time']
@@ -39,74 +32,6 @@ def convert_df_to_timeseries(df):
     df = df[~df.index.duplicated(keep='first')]
     df = df.sort_index()
     return df
-
-def create_dataset(root_path,pattern,data_save_path,data_name,reset_df = False):
-    files_list = []
-    bad_files = []
-    files_processed = []
-    base_df = pd.DataFrame(columns = ['name','date','time','open','high','low','close'])
-    if not os.path.exists(f'{data_save_path}{data_name}/'):
-        os.makedirs(f'{data_save_path}{data_name}/')
-        print_log(f'Created folder {data_save_path}{data_name}')
-
-    already_loaded_file_name = f'{data_save_path}{data_name}/already_loaded_files.pickle'
-    csv_save_location = f'{data_save_path}{data_name}/{data_name}.csv'
-    print_log(f'Data save path is {csv_save_location}')
-    print_log(f'File with already loaded files is {already_loaded_file_name}')
-    orig_cols = ['name','date','time','open','high','low','close']
-    try:
-        with open(already_loaded_file_name, 'rb') as handle:
-            already_loaded_files = pickle.load(handle)
-            already_loaded_files = [Path(col) for col in already_loaded_files]
-            print_log(f"Total files already saved {len(already_loaded_files)}")
-    except Exception as e1:
-        print_log(f"File {already_loaded_file_name} is not loaded because of error : {e1}")
-        already_loaded_files = []
-    for root, dirs, files in os.walk(root_path):
-        for filename in fnmatch.filter(files, pattern):
-            f_name = Path(os.path.join(root, filename))
-            files_list.append(f_name)
-    files_to_be_loaded = [f for f in files_list if f not in already_loaded_files]
-    files_to_be_loaded = list(dict.fromkeys(files_to_be_loaded))
-    files_list = list(dict.fromkeys(files_list))
-    print_log(f"Total files detected {len(files_list)}")
-    print_log(f"Total new files detected {len(files_to_be_loaded)}")
-    try:
-        base_df = pd.read_csv(csv_save_location)
-    except Exception as e1:
-        print_log(f"Error while loading dataframe from {csv_save_location} because of error : {e1}")
-        base_df = pd.DataFrame(columns = ['open','high','low','close'])
-        files_to_be_loaded = files_list
-    if len(base_df) == 0 or reset_df:
-        files_to_be_loaded = files_list
-        print_log(f"We are going to reload all the data")
-
-    print_log(f"Number of files to be loaded {len(files_to_be_loaded)}")
-    base_df_st_shape = base_df.shape
-    for i,f_name in enumerate(files_to_be_loaded,1):
-        f_name = os.path.join(root, f_name)
-        try:
-            tmp_df = pd.read_csv(f_name,header=None)
-            tmp_df = tmp_df.loc[:,0:6]
-            tmp_df.columns = orig_cols
-            tmp_df = convert_df_to_timeseries(tmp_df)
-            base_df = pd.concat([base_df,tmp_df],axis=0)
-            print_log(len(files_to_be_loaded)-i,base_df.shape,f_name)
-            already_loaded_files.append(f_name)
-        except Exception as e1:
-            bad_files.append(f_name)
-            print_log(f"File {f_name} is not loaded because of error : {e1}")
-    with open(already_loaded_file_name, 'wb') as handle:
-        pickle.dump(already_loaded_files, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    print_log(f"Shape of the dataframe before duplicate drop is {base_df.shape}")
-    base_df = base_df.drop_duplicates()
-    print_log(f"Shape of the dataframe after duplicate drop is {base_df.shape}")
-    if base_df_st_shape != base_df.shape:
-        base_df = base_df.sort_index()
-        base_df.to_csv(csv_save_location, index_label=False )
-        print_log(f"Saving dataframe to location {csv_save_location}")
-    return base_df
-
 class LabelCreator(BaseEstimator, TransformerMixin):
     def __init__(self, freq='1min',shift=-15,shift_column='close'):
         self.freq = freq
@@ -345,7 +270,6 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
         self.columns = columns
         self.fill_index = fill_index
 
-
     def fit(self, df, y=None):
         if len(self.columns) == 0:
             self.columns = [m for m in df.columns.tolist() for mt in self.column_pattern if mt in m]
@@ -393,7 +317,6 @@ class NormalizeDataset(BaseEstimator, TransformerMixin):
             df= imputer.transform(df)
             info_list.append('drop_na_col')
         if self.drop_na_rows:
-            #df = df[~df.isin([np.nan, np.inf, -np.inf]).any(1)]
             df = df.dropna(axis=0)
             info_list.append('drop_na_rows')
         df = df.sort_index()
@@ -426,7 +349,6 @@ class LastTicksGreaterValuesCount(BaseEstimator, TransformerMixin):
             print_log(f"LastTicksGreaterValuesCount : {col} : f'last_tick_{col}_{self.last_ticks}'")
             x = np.concatenate([[np.nan] * (self.last_ticks), df[col].values])
             arr = self.rolling_window(x, self.last_ticks + 1)
-            #print_log(arr)
             if self.create_new_col:
                 #df[f'last_tick_{col}_{self.last_ticks}'] = self.rolling_window(x, self.#last_ticks + 1)
                 df[f'last_tick_{col}_{self.last_ticks}']  = (arr[:, :-1] > arr[:, [-1]]).sum(axis=1)
@@ -457,12 +379,8 @@ class PriceLastTickBreachCountv1(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         print_log('*'*100)
-        df = df.sort_index()
-        #df.index = pd.to_datetime(df.index)
-        #df = df.sort_index()
-        #df = df[~df.index.duplicated(keep='first')]         
+        df = df.sort_index()        
         for col in self.columns:
-            #print_log(f"PriceLastTickBreachCount : {col}")
             for breach_type in self.breach_type:
                 
                 if self.create_new_col:
@@ -617,7 +535,6 @@ class RollingValues(BaseEstimator, TransformerMixin):
         df = df.sort_index()
         eval_stmt = '' 
         for lt,oper,agg in zip(self.last_ticks,self.oper,self.aggs):
-            #print_log(lt,oper,agg)
             tmpst = f"df[{self.columns}].rolling('{lt}', min_periods=1).{agg}() {oper}"
             eval_stmt = eval_stmt + tmpst
         tmpdf = eval(eval_stmt[:-1])
@@ -640,13 +557,11 @@ class PriceDayRangeHourWise(BaseEstimator, TransformerMixin):
 
     def transform(self, df):
         print_log('*'*100)
-        #df = convert_todate_deduplicate(df)
         df = df.sort_index()
         for r1,r2 in self.hour_range:
             for rt in self.range_type:
                 print_log(f"PriceDayRangeHourWise : {self.first_col} : {self.second_col} : {r1} : {r2} : {rt}")
                 if rt == 'price_range':
-                    #print_log(df[self.first_col])
                     s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max() - df[self.second_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).min()
                 elif rt == 'price_deviation_max_first_col':
                     s1 = df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).mean() - df[self.first_col].between_time(r1, r2).groupby(pd.Grouper(freq='d')).max()
@@ -765,7 +680,6 @@ class PriceVelocityv1(BaseEstimator, TransformerMixin):
                 df[self.col_name] = df[self.col_name].round(3)
             else:
                 self.col_name = f'price_velocity_{shftcol}_{self.shift}'
-                #df[self.col_name] = df[shftcol].subtract(df.shift(self.shift)[shftcol])
                 df[self.col_name] = df[shftcol] - df.shift(self.shift)[shftcol]
                 df[self.col_name] = df[self.col_name].round(3)
         if self.verbose:
@@ -853,7 +767,7 @@ class FilterData(BaseEstimator, TransformerMixin):
         self.verbose = verbose
         
     def fit(self, df, y=None):
-        return self     # Nothing to do in fit in this scenario
+        return self      
     
     def transform(self, df):
         print_log('*'*100)
@@ -903,9 +817,6 @@ class Zscoring(BaseEstimator, TransformerMixin):
         df = df.sort_index()
         if self.verbose:
             print_log(f"Shape of dataframe before Zscoring is {df.shape}") 
-        #zscore_fxn = lambda x: (x - x.rolling(window=200, min_periods=20).mean())/ x.rolling(window=200, min_periods=20).std()
-        #for col in self.columns:
-        #    df[f'Zscore_{col}_{self.window}'] =self.zscore(df[col],self.window)
         merge_dict = {}
         for col in self.columns:
             merge_dict.update({f'Zscore_{col}_{self.window}':self.zscore(df[col],self.window)})
@@ -959,6 +870,34 @@ class PercentageChange(BaseEstimator, TransformerMixin):
         merge_dict = {}
         for col in self.columns:
             merge_dict.update({f'PerChg_{col}_{self.periods}_{self.freq}':df[col].pct_change(periods=self.periods,fill_method=self.fill_method,limit = self.limit,freq=self.freq)})
+            #df[f'PerChg_{col}_{self.periods}_{self.freq}'] =df[col].pct_change(periods=self.periods,fill_method=self.fill_method,limit = self.limit,freq=self.freq)
+            print_log(f"PerChg_{col}_{self.periods}_{self.freq} completed")
+        df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
+        if self.verbose:
+            print_log(f"Shape of dataframe after PercentageChange is {df.shape}") 
+        return df
+
+class PercentageChange_Multiplier(BaseEstimator, TransformerMixin):
+    def __init__(self, columns,periods=30, fill_method='pad', limit=None, freq=None,multiplier=100,verbose=False):
+        self.columns = columns
+        self.periods = periods
+        self.fill_method = fill_method
+        self.limit = limit
+        self.freq = freq
+        self.multiplier = multiplier
+        self.verbose = verbose
+        
+    def fit(self, df, y=None):
+        return self     # Nothing to do in fit in this scenario
+    
+    def transform(self, df):
+        print_log('*'*100)
+        df = df.sort_index()
+        if self.verbose:
+            print_log(f"Shape of dataframe before PercentageChange is {df.shape}")
+        merge_dict = {}
+        for col in self.columns:
+            merge_dict.update({f'PerChg_{col}_{self.periods}_{self.freq}':df[col].pct_change(periods=self.periods,fill_method=self.fill_method,limit = self.limit,freq=self.freq)*self.multiplier})
             #df[f'PerChg_{col}_{self.periods}_{self.freq}'] =df[col].pct_change(periods=self.periods,fill_method=self.fill_method,limit = self.limit,freq=self.freq)
             print_log(f"PerChg_{col}_{self.periods}_{self.freq} completed")
         df = pd.concat([df,pd.concat(merge_dict,axis=1)],axis=1)
@@ -1045,9 +984,6 @@ class RollingRank(BaseEstimator, TransformerMixin):
         df = df.sort_index()
         if self.verbose:
             print_log(f"Shape of dataframe before RollingRank is {df.shape}")
-        #for col in self.columns:
-        #    df[f'RRNK_{col}_{self.window}_{self.min_periods}'] = df[col].rolling(window=self.window,min_periods=self.min_periods).apply(self.rank)
-            #pd.rolling_apply(df[col], window = self.window,min_periods=self.min_periods,func= self.rank)
         merge_dict = {}
         for col in self.columns:
             merge_dict.update({f'RRNK_{col}_{self.window}_{self.min_periods}':df[col].rolling(window=self.window,min_periods=self.min_periods).apply(self.rank)})
@@ -1102,8 +1038,6 @@ class PositiveNegativeTrends(BaseEstimator, TransformerMixin):
         df = df.sort_index()
         if self.verbose:
             print_log(f"Shape of dataframe before PositiveNegativeTrends is {df.shape}")
-        #for col in self.columns:
-        #    df[f'PNT_{col}_{self.window}_{self.min_periods}'] = df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)
         merge_dict = {}
         for col in self.columns:
             merge_dict.update({f'PNT_{col}_{self.window}_{self.min_periods}_DIFF':df[col].pct_change().apply(np.sign).rolling(self.window, min_periods=self.min_periods).apply(np.sum)})
@@ -1358,11 +1292,13 @@ class ConvertUnstableCols(BaseEstimator, TransformerMixin):
                     ])
         else:
             bt_pipe = Pipeline([
-                ('bt1', PercentageChange(columns= self.unstable_cols,periods=15, fill_method='pad', limit=None, freq=None,verbose=True)),
-                ('bt2', PercentageChange(columns= self.unstable_cols,periods=30, fill_method='pad', limit=None, freq=None,verbose=True)),
-                ('bt3', PercentageChange(columns= self.unstable_cols,periods=45, fill_method='pad', limit=None, freq=None,verbose=True)),
-                ('bt4', PercentageChange(columns= self.unstable_cols,periods=60, fill_method='pad', limit=None, freq=None,verbose=True))
+                ('bt1', PercentageChange_Multiplier(columns= self.unstable_cols,periods=15, fill_method='pad', limit=None, freq=None,verbose=True)),
+                ('bt2', PercentageChange_Multiplier(columns= self.unstable_cols,periods=30, fill_method='pad', limit=None, freq=None,verbose=True)),
+                ('bt3', PercentageChange_Multiplier(columns= self.unstable_cols,periods=45, fill_method='pad', limit=None, freq=None,verbose=True)),
+                ('bt4', PercentageChange_Multiplier(columns= self.unstable_cols,periods=60, fill_method='pad', limit=None, freq=None,verbose=True))
                     ])
         df = bt_pipe.fit_transform(df)
+        print_log(f"Shape of dataframe after applying transform in ConvertUnstableCols is {df.shape}") 
         df = df.drop(self.unstable_cols,axis=1)
+        print_log(f"Shape of dataframe after dropping unstable columns is {df.shape}")
         return df

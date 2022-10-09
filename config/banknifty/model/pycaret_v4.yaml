@@ -1,6 +1,6 @@
 paths:
   model_prefix: pycaret
-  model_spec: modelling.model_pycaret
+  model_spec_name: modelling.model_specs.model_pycaret_v4
   model_files: /content/drive/MyDrive/Work/trading/model/
   model_base_loc: ${model.paths.model_files}${data.paths.ticker_name}/${data.paths.data_create_date}/
   model_name: ${model.paths.model_prefix}_${data.paths.ticker_name}_${model.data.target_column}_${model.trainer.create_model.estimator}
@@ -34,6 +34,13 @@ data:
     test_date_range_ll: '2021-11-01'
     test_date_range_ul: '2022-04-30'
     valid_date_range_ll: '2022-04-01'
+    valid_date_range_ul: '2022-08-31'
+  splits_details_test:
+    train_date_range_ll: '2022-07-01'
+    train_date_range_ul: '2022-07-31'
+    test_date_range_ll: '2022-08-01'
+    test_date_range_ul: '2022-08-15'
+    valid_date_range_ll: '2022-08-06'
     valid_date_range_ul: '2022-08-31'
   sampling_type: others
   sampling_frac: 0.4

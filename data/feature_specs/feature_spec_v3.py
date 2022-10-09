@@ -8,9 +8,10 @@ import numpy as np
 #import data.data_config as dc
 from hydra import initialize, initialize_config_module, initialize_config_dir, compose
 from omegaconf import OmegaConf
-import data.data_utils as du
+import data.data_utils_old as du
 
-from config.common import Config
+from config.common.config import Config
+
 class CustomConfig(Config):
     def initialize_all_config(self):
         super(Config, self).initialize_all_config() 
@@ -45,6 +46,7 @@ class pipelines:
             ])
             
         self.technical_indicator_pipe = Pipeline([
+            ('tech_ind_pre_ND', de.NormalizeDataset(columns = self.OHLC_COLUMNS,impute_values=True,impute_type = 'mean_median_imputer',convert_to_floats = True)),
             ('tech_indicator1', de.TechnicalIndicator(method_type = self.TECHNICAL_IND_PATTERN)),
             ('tech_indicator1_ND1', de.NormalizeDataset(column_pattern = self.OHLC_COLUMNS + self.TECHNICAL_IND_PATTERN,fillna=True,fillna_method='bfill')),
             ('tech_indicator1_ND2', de.NormalizeDataset(column_pattern = self.OHLC_COLUMNS + self.TECHNICAL_IND_PATTERN,fillna=True,fillna_method='ffill')),

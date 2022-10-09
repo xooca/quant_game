@@ -4,16 +4,12 @@ from pycaret.classification import setup,compare_models,create_model,evaluate_mo
 from pycaret.utils import check_metric
 import numpy as np
 import data.data_utils as du
-from config.common import Config
+from config.common.config import Config,DefineConfig
         
-class BaseModel:
-    def __init__(self,config_obj):
-        self.config_obj = config_obj
+class BaseModel(DefineConfig):
+    def __init__(self,master_config_path):
+        DefineConfig.__init__(self,master_config_path)
         self.model_metadata = {}
-        self.define_parameters()
-
-    def define_parameters(self):
-        self.config_obj.initialize_all_config()
 
     def sampling(self,df):
         du.print_log(f"Sampling option is {self.sampling_type} ",self.using_print)
