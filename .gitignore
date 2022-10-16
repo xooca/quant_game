@@ -46,3 +46,4 @@ junk/NIFTY_data/data_01hour.csv
 *.csv
 *.pyc
 *.pkl
+sample2.json

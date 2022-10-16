@@ -53,7 +53,7 @@ datapipeline:
 datapipeline_details:
   master_pipeline: pipeline1
   master_pipeline_exclude_cols: ${data.common.ohlc_column}
-  merge_pipeline_to_master: [pipeline2,pipeline3,pipeline4,pipeline5]
+  merge_pipeline_to_master: [pipeline2,pipeline3,pipeline4,pipeline5,pipeline6,pipeline7]
   pipeline2_exclude_cols: ${data.common.ohlc_column}
   pipeline3_exclude_cols: ${data.common.ohlc_column}
   pipeline4_exclude_cols: ${data.common.ohlc_column}

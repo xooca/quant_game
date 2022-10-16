@@ -405,27 +405,31 @@ class execute_data_pipeline(DefineConfig):
             
     def time_based_split(self,master_df):
         train = master_df[master_df.index.to_series().between(self.train_date_range_ll, self.train_date_range_ul)]
+        print_log(f"Shape of train df is : {train.shape}",self.using_print)
         test = master_df[master_df.index.to_series().between(self.test_date_range_ll, self.test_date_range_ul)]
+        print_log(f"Shape of test df is : {test.shape}",self.using_print)
         valid = master_df[master_df.index.to_series().between(self.valid_date_range_ll, self.valid_date_range_ul)]
+        print_log(f"Shape of valid df is : {valid.shape}",self.using_print)
+        del master_df
+        gc.enable()
+        gc.collect()
         train.to_csv(self.train_training_data_output_path)
         print_log(f"Train data saved at location {self.train_training_data_output_path}",self.using_print)
-        print_log(f"Shape of train df is : {train.shape}",self.using_print)
         valid.to_csv(self.train_validation_data_output_path)
         print_log(f"Valid data saved at location {self.train_validation_data_output_path}",self.using_print)
-        print_log(f"Shape of valid df is : {valid.shape}",self.using_print)
         test.to_csv(self.train_testing_data_output_path)
         print_log(f"Test data saved at location {self.train_testing_data_output_path}",self.using_print)
-        print_log(f"Shape of test df is : {test.shape}",self.using_print)
+        
 
-    def stratified_split(self,master_df):
-        print_log(f"Stratify column is {self.stratify_col}",self.using_print)
-        train, test = train_test_split(master_df, test_size=self.train_testing_percent,stratify=master_df[self.stratify_col])
+    def stratified_split(self,train):
+        print_log(f"Stratify column is {self.train_stratify_col}",self.using_print)
+        train, test = train_test_split(train, test_size=self.train_testing_percent,stratify=train[self.train_stratify_col])
         test.to_csv(self.train_testing_data_output_path)
         print_log(f"Shape of test df is : {test.shape}",self.using_print)
         print_log(f"Test data saved at location {self.train_testing_data_output_path}",self.using_print)
         if self.train_validation_percent is not None:
             print_log(f"Valid split size is {self.train_validation_percent}",self.using_print)
-            train, valid = train_test_split(train, test_size=self.train_validation_percent,stratify=train[self.stratify_col])
+            train, valid = train_test_split(train, test_size=self.train_validation_percent,stratify=train[self.train_stratify_col])
             train.to_csv(self.train_training_data_output_path)
             print_log(f"Shape of train df is : {train.shape}",self.using_print)
             print_log(f"Train data saved at location {self.train_training_data_output_path}",self.using_print)
@@ -433,8 +437,8 @@ class execute_data_pipeline(DefineConfig):
             print_log(f"Shape of valid df is : {valid.shape}",self.using_print)
             print_log(f"Validation data saved at location {self.train_validation_data_output_path}",self.using_print)
     
-    def random_split(self,master_df):
-        train, test = train_test_split(master_df, test_size=self.train_testing_percent)
+    def random_split(self,train):
+        train, test = train_test_split(train, test_size=self.train_testing_percent)
         test.to_csv(self.train_testing_data_output_path)
         print_log(f"Shape of test df is : {test.shape}",self.using_print)
         if self.train_validation_percent is not None:
@@ -485,19 +489,72 @@ class execute_data_pipeline(DefineConfig):
     def merge_pipeline(self,split_flag=True):
         master_df =self.merge_data()
         filter_pipe = Pipeline([('save_fd', de.FilterData(start_date=self.save_start_date,end_date=self.save_end_date)),])
+        master_df = reduce_mem_usage(master_df)
         master_df = filter_pipe.fit_transform(master_df)
+        print_log(f"Shape of data after filtering is : {master_df.shape}",self.using_print)
         if split_flag:
             if self.splits_type == 'normal':
                 print_log(f"Started splitting data into train, test and validation",self.using_print)
                 print_log(f"Test split size is {self.train_testing_percent}",self.using_print)
-                if self.stratify_col is not None:
+                if self.train_stratify_col is not None or self.train_stratify_col != 'None':
+                    print_log(f"Split type is stratified split",self.using_print)
                     self.stratified_split(master_df)
                 else:
+                    print_log(f"Split type is random split",self.using_print)
                     self.random_split(master_df)
             elif self.splits_type == 'time_based':
+                print_log(f"Split type is time based split",self.using_print)
                 self.time_based_split(master_df)
             else:
                 print_log(f"split type {self.splits_type} is not correct. Please mention split type as normal or time_based",self.using_print)
+        else:
+            master_df.to_csv(self.train_training_data_output_path)
+
+
+class execute_prediction_data_pipeline(DefineConfig):
+    def __init__(self,master_config_path):
+        DefineConfig.__init__(self,master_config_path)
+        check_and_create_dir(self.base_data_loc)
+        print_log(f"Feature spec file is {self.train_datapipeline_spec}",self.using_print)
+        feature_spec = importlib.import_module(f"{self.train_datapipeline_spec}")
+        self.feature_pipeline = feature_spec.pipelines(self.config)
+        self.custom_parameter_definition()
+        self.base_df = pd.DataFrame()
+    
+    def custom_parameter_definition(self):
+        self.datapipeline = self.config.data.datapipeline
+            
+    def load_and_run_individual_pipeline(self,pipe_location,datapipeline,pipe_name,pipe_data_location):
+        pipe_dir = f"{pipe_location}saved_pipeline/{datapipeline}"
+        pipe_file = f"{pipe_dir}/pipe_{pipe_name}.pkl"
+        if not os.path.exists(pipe_file):
+            print_log(f"{pipe_file} does not exists. skipping {pipe_name}",self.using_print)
+            return
+        with open(pipe_file, 'rb') as handle:
+            pipe = pickle.load(handle)
+        self.base_df = pipe.transform(self.base_df)
+        #self.base_df.to_csv(pipe_data_location)
+        print_log(f"Data saved at location {pipe_data_location}",self.using_print)
+            
+    def load_and_run_pipeline(self,pipe_location,datapipeline,subdatapipeline):
+        check_and_create_dir(self.predict_base_path)
+        pipe_data_location = f"{self.predict_base_path}{datapipeline}.csv"
+        for pipe_name in subdatapipeline:
+            self.load_and_run_individual_pipeline(pipe_location,datapipeline,pipe_name,pipe_data_location)
+
+    def load_run_prediction_pipeline(self,df,if_save=False):
+        self.base_df = df
+        final_pipeline_path = f"{self.base_data_loc}final_pipeline.pkl"
+        with open(final_pipeline_path, 'rb') as handle:
+            pipelines_dict = pickle.load(handle)
+        print_log(f"Below is the description of full pipeline :",self.using_print)
+        print_log(f"{pipelines_dict}",self.using_print)
+        final_predict_path = f"{self.predict_base_path}final_predict_df.csv"
+        for datapipeline,subdatapipeline in pipelines_dict.items():
+            self.load_and_run_pipeline(self.base_data_loc,datapipeline,subdatapipeline)
+        if if_save:
+            self.base_df.to_csv(final_predict_path) 
+     
 class read_data_api:
     def __init__(self,master_config):
         master_config = dict(master_config['master']['model'])

@@ -27,6 +27,7 @@ class modelling(BaseModel):
         self.setup['data'] = self.train
         if self.valid is not None:
             self.setup['test_data'] = self.valid
+            du.print_log(f"Valid dataset is defined",self.using_print)
         self.experiment_setup = setup(**self.setup)
         self.model_metadata.update({'model_setup_args':self.setup})
         self.save_model_artifacts()
