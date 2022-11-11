@@ -21,6 +21,7 @@ class modelling(BaseModel):
         self.blend_args = self.config.model.trainer.blend_model
         self.stack_args = self.config.model.trainer.stack_model
         self.check_metric = self.config.model.trainer.check_metric
+        self.create_model_args = self.config.model.trainer.create_model
 
     def initial_setup(self): 
         self.setup = dict(self.setup)
@@ -77,8 +78,8 @@ class modelling(BaseModel):
         self.save_model_artifacts()
 
     def model_creation_fn(self):
-        self.created_model = create_model(**self.create_model)
-        self.model_metadata.update({'model_creation_args':self.create_model})
+        self.created_model = create_model(**self.create_model_args)
+        self.model_metadata.update({'model_creation_args':self.create_model_args})
 
     def model_finalization(self):
         try:
@@ -123,13 +124,16 @@ class modelling(BaseModel):
         if from_compare:
             self.considered_model = self.compared_model
             self.model_metadata.update({'considered_model':'from_compare'})
+            du.print_log(f"Model considered from 'from compare' ",self.using_print)
         else:
             self.considered_model = self.created_model
             self.model_metadata.update({'considered_model':'from_creation'})
+            du.print_log(f"Model considered from 'from creation' ",self.using_print)
         try:
             arg_dict = dict(self.tune_args)
             arg_dict['estimator'] = self.considered_model
             tuned_model = tune_model(**arg_dict)
+            du.print_log(f"Model tuning arguments are {arg_dict}",self.using_print)
             self.model_metadata.update({'model_tuning_status':'success'})
             self.model_metadata.update({'model_tuning_args':arg_dict})
             du.print_log(f"Model tuning success.... ",self.using_print)
@@ -137,7 +141,7 @@ class modelling(BaseModel):
             du.print_log(f"Model tuning failed.... ",self.using_print)
             du.print_log(f"Error encountered is {e} ",self.using_print)
             self.model_metadata.update({'model_tuning_status':'failed'})
-            tune_model=None
+            tuned_model=None
         self.save_model_artifacts()
         return tuned_model
 

@@ -561,9 +561,10 @@ class read_data_api:
         hydra.core.global_hydra.GlobalHydra.instance().clear()
         self.config = initialize_config(**master_config)
         self.using_print = True if self.config.data.generic.verbose_type == 'print' else False
+        print(self.config)
         self.base_url = self.config.common.endpoint.base_url
         self.endpoint_details = self.config.common.endpoint_details
-        self.read_action = self.config.common.read_action
+        self.read_action = self.config.common.endpoint.read_action
 
     def create_url(self,url=None):
         if url is None:

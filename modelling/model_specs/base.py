@@ -10,6 +10,7 @@ class BaseModel(DefineConfig):
     def __init__(self,master_config_path):
         DefineConfig.__init__(self,master_config_path)
         self.model_metadata = {}
+        du.check_and_create_dir(self.model_base_loc)
 
     def sampling(self,df):
         du.print_log(f"Sampling option is {self.sampling_type} ",self.using_print)

@@ -1,0 +1,37 @@
+alphavantage:
+  endpoint:
+    base_url: https://www.alphavantage.co/query?
+    read_action: csv
+  endpoint_details:
+    function: TIME_SERIES_DAILY
+    symbol: SBIN.BSE
+    interval: 1min
+    outputsize: full
+    datatype: None
+    apikey: 90L05WAV2MO0OQ0V
+
+zerodha:
+  zerodha_api_metadata_base_path: /Users/prabhatkumar/Library/CloudStorage/GoogleDrive-888prabhat@gmail.com/My Drive/Work/trading/config/api/
+  zerodha_request_key_file: "request_key.txt"
+  zerodha_request_token_path: ${common.zerodha.api_metadata_base_path}${common.zerodha.api_key_file}
+  zerodha_access_token_file: "access_token.txt"
+  zerodha_access_token_path: ${common.zerodha.api_metadata_base_path}${common.zerodha.zerodha_access_token_file}
+  zerodha_userid:
+  zerodha_password:
+  zerodha_api_key:
+  zerodha_api_secret:
+  zerodha_pin_flag: False
+  zerodha_pin:
+  zerodha_topt:
+  zerodha_duck_db_path: /Users/prabhatkumar/Desktop/db/testdb
+  zerodha_userid_xpath: /html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[1]/input
+  zerodha_password_xpath: /html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[2]/input
+  zerodha_submit_pre_button: /html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[4]/button
+  zerodha_pin_xpath: /html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[2]/div/input
+  zerodha_submit_post_button: /html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[3]/button
+  zerodha_exchange: NSE
+  zerodha_tickers: 
+      - BANKNIFTY
+      - 
+
+
