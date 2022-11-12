@@ -1,5 +1,4 @@
 
-
 from kiteconnect import KiteConnect,KiteTicker
 from selenium import webdriver
 import time
@@ -142,6 +141,7 @@ class trade_zerodha(TradeApiData):
     def on_ticks(self,ws,ticks):
         # Callback to receive ticks.
         #logging.debug("Ticks: {}".format(ticks))
+        self.insert_ticker_table(self.)
         print(ticks)
 
     def on_connect(self,ws,response):
@@ -221,68 +221,60 @@ class trade_zerodha(TradeApiData):
                     print("unable to delete order id : ",order)
                     attempt+=1
 
-    def insert_ticks(self,ticks):
-        for tick in ticks:
-            try:
-                tok = "TOKEN"+str(tick['instrument_token'])
-                vals = [tick['exchange_timestamp'],tick['last_price'], tick['last_traded_quantity']]
-                query = "INSERT INTO {}(ts,price,volume) VALUES (?,?,?)".format(tok)
-                c.execute(query,vals)
-            except:
-                pass
-        try:
-            db.commit()
-        except:
-            db.rollback()   
+    def create_ticker_table(self,ticker_name):
+        self.con.execute(f'''
+        CREATE TABLE main.{ticker_name}_ticker(
+        instrument_token VARCHAR, 
+        volume DECIMAL(8,2), 
+        last_price DECIMAL(8,2),
+        average_price DECIMAL(8,2),
+        last_quantity INTEGER,
+        buy_quantity INTEGER,
+        sell_quantity INTEGER,
+        last_trade_time DATE
+        )
+        ''')
 
-for tick in ticks:
-			
-				...
-				...
-				...
+    def insert_ticker_table(self,ticker_name,data_value):
+        self.con.execute(f'''
+        INSERT into main.{ticker_name}_ticker VALUES
+        {data_value}
+        ''')
 
-				### Credits www.EzeeTrading.in
+    def create_ohlc_table(self,ticker_name):
+        self.con.execute(f'''
+        CREATE TABLE main.{ticker_name}_ohlc(
+        trade_time DATE,
+        instrument_token VARCHAR, 
+        open DECIMAL(8,2), 
+        high DECIMAL(8,2),
+        low DECIMAL(8,2),
+        close DECIMAL(8,2),
+        volumn INTEGER
+        )
+        ''')
 
-				instrument=tick["instrument_token"]
-				ltt=tick["last_trade_time"]
-			
-				ltt_min_1=datetime.datetime(ltt.year, ltt.month, ltt.day, ltt.hour,ltt.minute)
+    def insert_ohlc_table(self,ticker_name,data_value):
+        self.con.execute(f'''
+        INSERT into main.{ticker_name}_ohlc VALUES
+        {data_value}
+        ''')
 
-				# For any other timeframe. Simply change ltt_min_1 variable defination.
-				# e.g.
-				# ltt_min_15=datetime.datetime(ltt.year, ltt.month, ltt.day, ltt.hour,ltt.minute//15*15)
+    def create_prediction_table(self,ticker_name):
+        self.con.execute(f'''
+        CREATE TABLE main.{ticker_name}_prediction(
+        trade_time DATE,
+        instrument_token VARCHAR, 
+        label_name VARCHAR,
+        prediction VARCHAR
+        )
+        ''')
 
-				### Forming 1 Min Candles...
+    def insert_prediction_table(self,ticker_name,data_value):
+        self.con.execute(f'''
+        INSERT into main.{ticker_name}_prediction VALUES
+        {data_value}
+        ''')
 
-				try:
-						if ltt_min_1 in candles_1[instrument]:
-								candles_1[instrument][ltt_min_1]["high"]=max(candles_1[instrument][ltt_min_1]["high"],tick["last_price"]) #1
-								candles_1[instrument][ltt_min_1]["volume"]=max(candles_1[instrument][ltt_min_1]["volume"],tick["volume"]) #1.5 Use the max in volume instead of last.
-								candles_1[instrument][ltt_min_1]["low"]=min(candles_1[instrument][ltt_min_1]["low"],tick["last_price"]) #2
-								candles_1[instrument][ltt_min_1]["close"]=tick["last_price"] #3
-								#candles_1[instrument][ltt_min_1]["volume"]=tick["volume"] #3.5
-						else:
-								candles_1[instrument][ltt_min_1]={}
-								candles_1[instrument][ltt_min_1]["high"]=tick["last_price"] #4
-								candles_1[instrument][ltt_min_1]["low"]=tick["last_price"] #5
-								candles_1[instrument][ltt_min_1]["open"]=tick["last_price"] #6
-								candles_1[instrument][ltt_min_1]["close"]=tick["last_price"] #7
-								candles_1[instrument][ltt_min_1]["volume"]=tick["volume"] #3.5
-				except KeyError:
-						if instrument not in candles_1:
-								candles_1[instrument]={}
-						if ltt_min_1 not in candles_1[instrument]:
-								candles_1[instrument][ltt_min_1]={}
-						candles_1[instrument][ltt_min_1]["high"]=tick["last_price"] #8
-						candles_1[instrument][ltt_min_1]["low"]=tick["last_price"] #9
-						candles_1[instrument][ltt_min_1]["open"]=tick["last_price"] #10
-						candles_1[instrument][ltt_min_1]["close"]=tick["last_price"] #11
-						candles_1[instrument][ltt_min_1]["volume"]=tick["volume"] #3.5
-		
-		Hope above helped you..! 
-		
-		You can also have a look at some ready Strategies available to subscribe below. 
-		
-		Or visit our home page and dive deeper into Algo-trading and make your journey quicker and smoother by learning some of the treasured knowledge from us. 
-		
-		A small step in right direction would keep you focused for long...
+
+     
