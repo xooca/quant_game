@@ -5,6 +5,7 @@ paths:
   base_data_loc: "${data.paths.data_files}${data.paths.ticker_name}/${data.paths.data_create_date}/"
   input_path: "${data.initial_data_setup.raw_data_save_path}"
   using_print: print
+  db_name: /Volumes/Seagate/database/development/test
   
 initial_data_setup:
   raw_data_input_path: "${data.paths.data_files}source_files/"
@@ -12,9 +13,13 @@ initial_data_setup:
   data_pattern: '*BANKNIFTY.txt'
   source_data: "${data.paths.data_files}input/${data.paths.ticker_name}/${data.paths.data_create_date}/"
   raw_data_save_path: "${data.initial_data_setup.source_data}${data.paths.ticker_name}.csv"
-  initial_columns: ['name','date','time','open','high','low','close']
+  initial_columns: ['ticker','date','time','open','high','low','close']
+  available_zip_files_table: "${data.paths.ticker_name}.available_zip_files"
+  loaded_source_files_table: "${data.paths.ticker_name}.loaded_source_files"
+  ohlc_raw_data_table: "${data.paths.ticker_name}.ohlc_raw_data"
 
 training_data_pipeline:
+  train_feature_table: "${data.paths.ticker_name}.train_feature"
   train_data_prefix: training
   train_base_path: "${data.paths.base_data_loc}${data.training_data_pipeline.train_data_prefix}/"
   train_initial_file_path: "${data.training_data_pipeline.train_base_path}${data.paths.ticker_name}_initial.csv"

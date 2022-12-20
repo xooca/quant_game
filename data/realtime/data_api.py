@@ -275,6 +275,3 @@ class trade_zerodha(TradeApiData):
         INSERT into main.{ticker_name}_prediction VALUES
         {data_value}
         ''')
-
-
-     
