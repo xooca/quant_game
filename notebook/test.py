@@ -57,17 +57,24 @@ import spacy
 
 def get_tokenized_sentence_and_entity_list(sentence, spans):
     nlp = spacy.load('en_core_web_sm')
-    doc = nlp(sentence)
-    entity_dict = {}
+    entity_indices = set()
     for span in spans:
-        for i in range(span['start'], span['end']):
-            entity_dict[i] = span['entity_type']
+        entity_start = span['start']
+        while entity_start < span['end']:
+            entity_end = sentence[entity_start:].index(span['text']) + entity_start + len(span['text'])
+            entity_indices.update(range(entity_start, entity_end))
+            entity_start = entity_end
     tokenized_sentence = []
     entity_list = []
-    for token in doc:
+    for token in nlp(sentence):
         tokenized_sentence.append(token.text)
-        if token.i in entity_dict:
-            entity_list.append(entity_dict[token.i])
+        if token.idx in entity_indices:
+            for span in spans:
+                if token.idx >= span['start'] and token.idx + len(token.text) <= span['end']:
+                    entity_list.append(span['entity_type'])
+                    break
+            else:
+                entity_list.append('misc')
         else:
             entity_list.append('misc')
     return tokenized_sentence, entity_list
