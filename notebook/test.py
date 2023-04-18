@@ -51,3 +51,24 @@ b = ["MISC", "MISC", "MISC", "MISC", "PERSON", "PERSON"]
 combined_a, combined_b = combine_lists(a, b)
 print(combined_a)
 print(combined_b)
+
+
+import spacy
+
+def get_tokenized_sentence_and_entity_list(sentence, spans):
+    nlp = spacy.load('en_core_web_sm')
+    doc = nlp(sentence)
+    entity_dict = {}
+    for span in spans:
+        for i in range(span['start'], span['end']):
+            entity_dict[i] = span['entity_type']
+    tokenized_sentence = []
+    entity_list = []
+    for token in doc:
+        tokenized_sentence.append(token.text)
+        if token.i in entity_dict:
+            entity_list.append(entity_dict[token.i])
+        else:
+            entity_list.append('misc')
+    return tokenized_sentence, entity_list
+
